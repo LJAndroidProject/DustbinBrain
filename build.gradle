@@ -1,0 +1,53 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+apply plugin: 'koin'
+apply from: 'version.gradle'
+apply from: "config.gradle"
+
+buildscript {
+    ext.kotlin_version = '1.5.0'
+    ext.koin_version = '2.2.1'
+
+    repositories {
+        maven{
+            url 'https://maven.aliyun.com/repository/public'
+        }
+        maven{
+            url 'https://maven.aliyun.com/repository/google'
+        }
+        maven{
+            url 'https://maven.aliyun.com/repository/gradle-plugin'
+        }
+        maven { url 'http://raw.github.com/saki4510t/libcommon/master/repository/' }
+        maven { url 'https://gitee.com/liuchaoya/libcommon/raw/master/repository/' }
+        google()
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        mavenCentral() // add repository
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.2.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+        classpath 'com.hujiang.aspectjx:gradle-android-plugin-aspectjx:2.0.10'
+        classpath "org.koin:koin-gradle-plugin:$koin_version"
+        classpath 'org.greenrobot:greendao-gradle-plugin:3.3.0' // 添加插件 更好支持GreenDao
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

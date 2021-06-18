@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    >
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/main_bind_dev"
+        android:layout_width="@dimen/x500"
+        android:layout_height="@dimen/y100"
+        android:layout_marginBottom="@dimen/y100"
+        android:layout_above="@id/main_dev_debug"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:text="绑定设备"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_20"
+        android:insetTop="@dimen/dp_0"
+        app:cornerRadius="@dimen/dp_10"
+        android:insetBottom="@dimen/dp_0"
+        android:onClick="openChild"
+        app:backgroundTint="@color/ffst_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/main_dev_debug"
+        android:layout_width="@dimen/x500"
+        android:layout_height="@dimen/y100"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:text="设备调试"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_20"
+        android:insetTop="@dimen/dp_0"
+        app:cornerRadius="@dimen/dp_10"
+        android:insetBottom="@dimen/dp_0"
+        android:onClick="openChild"
+        app:backgroundTint="@color/ffst_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/main_tpm"
+        android:layout_width="@dimen/x500"
+        android:layout_height="@dimen/y100"
+        android:layout_below="@id/main_dev_debug"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="@dimen/y100"
+        android:gravity="center"
+        android:text="故障维修"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_20"
+        android:insetTop="@dimen/dp_0"
+        android:insetBottom="@dimen/dp_0"
+        app:cornerRadius="@dimen/dp_10"
+        android:onClick="openChild"
+        app:backgroundTint="@color/ffst_btn"
+        />
+
+
+</RelativeLayout>

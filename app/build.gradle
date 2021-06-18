@@ -1,0 +1,87 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply plugin: 'kotlin-kapt' // 使用 kapt 注解处理工具
+
+apply from: '../aspectjx.gradle'
+
+apply plugin: 'org.greenrobot.greendao'
+
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
+    defaultConfig {
+        applicationId "com.ffst.dustbinbrain"
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            //设置支持的SO库架构
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
+    }
+    androidExtensions {
+        experimental = true
+    }
+    buildFeatures {
+        viewBinding = true
+    }
+    greendao {
+        schemaVersion 1 //当前数据库版本
+        targetGenDir 'src/main/java/' //指定生成代码的目录
+        daoPackage 'com.ffst.dustbinbrain.kotlin_mvp.bean'//生成代码到具体包下
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "androidx.appcompat:appcompat:$appcompat_version"
+    implementation "androidx.core:core-ktx:$core_ktx_version"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$coordinatorlayout_version"
+    implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
+    implementation "com.google.android.material:material:$material_version"
+    api 'com.blankj:utilcodex:1.26.0'
+    implementation project(path: ':serialportlibrary')
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation project(path: ':mvp')
+    kapt project(path: ':compiler')
+//    implementation "com.github.catch-pig.kotlin-mvp:mvp:$kotlin_mvp"
+//    kapt "com.github.catch-pig.kotlin-mvp:compiler:$kotlin_mvp"
+    //刷新-头部
+    api "com.scwang.smart:refresh-header-material:$SmartRefreshLayout_version"
+    //刷新-底部
+    implementation "com.scwang.smart:refresh-footer-classics:$SmartRefreshLayout_version"
+    //图片加载框架
+    implementation "com.github.bumptech.glide:glide:$glide_version"
+    kapt "com.github.bumptech.glide:compiler:$glide_version"
+    //权限
+    implementation "com.github.tbruyelle:rxpermissions:$rxpermissions_version"
+
+    implementation 'com.tencent:mmkv-static:1.2.9'
+
+    implementation 'org.greenrobot:greendao:3.3.0'
+
+    implementation(name: 'FacePassAndroidSDK-month-release', ext: 'aar')
+
+    implementation(name: 'socket-client-release', ext: 'aar')
+
+    implementation 'com.android.volley:volley:1.0.0'
+}
