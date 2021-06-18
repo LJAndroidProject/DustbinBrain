@@ -10,6 +10,7 @@ import com.ffst.annotation.ClickGap
 import com.ffst.annotation.MethodLog
 import com.ffst.annotation.enums.LEVEL
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.test.SerialProtTestActivity
 import com.ffst.utils.ext.startKtActivity
 
 class DeviceMannageActivity : AppCompatActivity() {
@@ -46,7 +47,8 @@ class DeviceMannageActivity : AppCompatActivity() {
                 finish()
             }
             R.id.main_dev_debug -> {
-
+                startKtActivity<SerialProtTestActivity>()
+                finish()
             }
             R.id.main_tpm -> {
 

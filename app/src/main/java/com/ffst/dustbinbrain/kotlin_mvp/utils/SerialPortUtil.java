@@ -34,7 +34,7 @@ public class SerialPortUtil {
                             .setBaudrate(115200)
 //                            .setDevicePath("dev/ttyS4") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             //创显塑料接口是ttyS1
-                            .setDevicePath("dev/ttyS1") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
+                            .setDevicePath("dev/ttyS4") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             //廉洁公园点接的串口是TTL  通道是ttyS2
 //                            .setDevicePath("dev/ttyS2") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             .createService();
