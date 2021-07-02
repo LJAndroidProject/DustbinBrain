@@ -4,14 +4,17 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.ffst.annotation.ClickGap
 import com.ffst.annotation.MethodLog
 import com.ffst.annotation.enums.LEVEL
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view.MainActivity
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.test.SerialProtTestActivity
 import com.ffst.utils.ext.startKtActivity
+import com.tencent.mmkv.MMKV
 
 class DeviceMannageActivity : AppCompatActivity() {
     /* 程序所需权限 ：相机 文件存储 网络访问 */
@@ -29,9 +32,16 @@ class DeviceMannageActivity : AppCompatActivity() {
         PERMISSION_ACCESS_NETWORK_STATE,
         Manifest.permission.ACCESS_COARSE_LOCATION
     )
+    var mmkv: MMKV? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mmkv = MMKV.defaultMMKV()
+
+        if(!TextUtils.isEmpty(mmkv?.decodeString("device_id"))){
+            startKtActivity<MainActivity>()
+            finish()
+        }
         setContentView(R.layout.activity_device_mannage)
         if(!hasPermission()){
             requestPermission()

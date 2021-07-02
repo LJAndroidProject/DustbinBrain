@@ -36,11 +36,12 @@
             android:layout_width="match_parent"
             android:id="@+id/bind_device_id"
             android:hint="输入设备号"
-            android:background="@null"
-            android:layout_height="@dimen/y100">
+            android:layout_height="wrap_content">
                 <EditText
                     android:background="@drawable/shape_no_stroke"
                     android:textSize="@dimen/sp_16"
+                    android:maxLines="1"
+                    android:inputType="text"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
         </com.google.android.material.textfield.TextInputLayout>
@@ -48,14 +49,14 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:id="@+id/bind_device_auth"
-            android:layout_marginTop="@dimen/y15"
+            android:layout_marginTop="@dimen/y20"
             android:hint="输入设备编号授权码"
-            android:background="@null"
-            android:layout_height="@dimen/y100">
+            android:layout_height="wrap_content">
             <EditText
 
                 android:background="@drawable/shape_no_stroke"
                 android:textSize="@dimen/sp_16"
+                android:inputType="text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"/>
 

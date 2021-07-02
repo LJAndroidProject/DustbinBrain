@@ -25,7 +25,7 @@ import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
-import com.ffst.dustbinbrain.kotlin_mvp.app.KotlinMvpApp
+import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.*
 import com.ffst.dustbinbrain.kotlin_mvp.manager.ThreadManager
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraManager
@@ -47,10 +47,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import mcv.facepass.FacePassException
 import mcv.facepass.FacePassHandler
 import mcv.facepass.types.*
-import okhttp3.Call
 import org.json.JSONObject
 import java.io.File
-import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
@@ -139,6 +137,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     private val mFaceOperationBtn: ImageView? = null
 
+    var deviceCode: String? = null
+
     /*图片缓存*/
 
     private var mAndroidHandler: Handler? = null
@@ -161,7 +161,13 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         bindData()
         initTCP()
         //获取投放时间
-        viewModel!!.getBinsWorkTime()
+        deviceCode = mmkv?.decodeString("device_id")
+        var map: MutableMap<String, String> = mutableMapOf(
+            "device_id" to deviceCode.toString()
+        )
+        viewModel!!.getBinsWorkTime(null)
+        //获取投放时间
+        viewModel!!.getDeviceQrcode(null)
 
         //初始化人脸SDK
         initFaceSDK()
@@ -197,7 +203,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             }
         } catch (e: FacePassException) {
             e.printStackTrace()
-            toast(e.message!!)
+            LogUtils.dTag(DEBUG_TAG, e.message)
         }
     }
 
@@ -944,9 +950,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             val vxLoginCall: VXLoginCall =
                                 gson.fromJson(data, VXLoginCall::class.java)
                             //  修改当前设置的用户id
-                            KotlinMvpApp.userId = vxLoginCall.getInfo().getUser_id()
+                            DustbinBrainApp.userId = vxLoginCall.getInfo().getUser_id()
                             //  修改当前用户类型
-                            KotlinMvpApp.userType = vxLoginCall.getInfo().getUser_type()
+                            DustbinBrainApp.userType = vxLoginCall.getInfo().getUser_type()
                             //  隐藏二维码扫码
 
                             //  云端有该人的人脸特征，则将特征保存到本地
@@ -967,7 +973,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                         userMessage.getFaceToken().toByteArray()
                                     )
                                     //  本地数据库中删除这个用户
-                                    DataBaseUtil.getInstance(this@MainActivity).getDaoSession()!!.userMessageDao.delete(userMessage)
+                                    DataBaseUtil.getInstance(this@MainActivity)
+                                        .getDaoSession()!!.userMessageDao.delete(userMessage)
                                     Log.i(DEBUG_TAG, "删除旧的人脸特征与注册信息")
                                 } else {
                                     Log.i(DEBUG_TAG, "不存在该用户，可以添加")
@@ -998,7 +1005,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                     Log.i(DEBUG_TAG, "绑定成功，将跳转控制台")
                                     //  faceToken 和用户id 绑定
                                     DataBaseUtil.getInstance(this@MainActivity)
-                                        .insertUserIdAndFaceToken(KotlinMvpApp.userId!!.toLong(), faceToken)
+                                        .insertUserIdAndFaceToken(
+                                            DustbinBrainApp.userId!!.toLong(),
+                                            faceToken
+                                        )
 
                                     //  跳转到垃圾箱控制台
                                     goControlActivity()
@@ -1016,8 +1026,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             //  回收桶二维码登录
                             val gQrReturnBean: GQrReturnBean =
                                 gson.fromJson(data, GQrReturnBean::class.java)
-                            KotlinMvpApp.userId = gQrReturnBean.getInfo().getUser_id()
-                            KotlinMvpApp.userType = gQrReturnBean.getInfo().getUser_type()
+                            DustbinBrainApp.userId = gQrReturnBean.getInfo().getUser_id()
+                            DustbinBrainApp.userType = gQrReturnBean.getInfo().getUser_type()
                             goControlActivity()
                         } else if (type == "nfcActivity") {
                             val nfcActivityBean: NfcActivityBean =
@@ -1025,8 +1035,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             //  nfc 绑定成功
                             if (nfcActivityBean.getData().getCode() === 1) {
                                 //  设置用户id
-                                KotlinMvpApp.userId = nfcActivityBean.getData().getInfo().getUser_id()
-                                KotlinMvpApp.userType = nfcActivityBean.getData().getInfo().getUser_type()
+                                DustbinBrainApp.userId =
+                                    nfcActivityBean.getData().getInfo().getUser_id()
+                                DustbinBrainApp.userType =
+                                    nfcActivityBean.getData().getInfo().getUser_type()
 
                                 //  跳转到垃圾箱控制台
                                 goControlActivity()
@@ -1067,18 +1079,22 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             }
                         } else if (type == "deleteAllFace") {
                             //  删除所有用户信息
-                            DataBaseUtil.getInstance(this@MainActivity).getDaoSession()!!.userMessageDao.deleteAll()
+                            DataBaseUtil.getInstance(this@MainActivity)
+                                .getDaoSession()!!.userMessageDao.deleteAll()
                             //  删除人脸库
                             mFacePassHandler!!.clearAllGroupsAndFaces()
                             //  重启
 //                            AndroidDeviceSDK.reBoot(this@MainActivity)
                         } else if (type == "updateAllUserType0") {
                             //  修改所有用户类型 为 0
-                            val userMessageList: List<UserMessage> = DataBaseUtil.getInstance(this@MainActivity).getDaoSession()!!.userMessageDao.queryBuilder().list()
+                            val userMessageList: List<UserMessage> =
+                                DataBaseUtil.getInstance(this@MainActivity)
+                                    .getDaoSession()!!.userMessageDao.queryBuilder().list()
                             for (userMessage in userMessageList) {
                                 userMessage.setUserType(0)
                             }
-                            DataBaseUtil.getInstance(this@MainActivity).getDaoSession()!!.userMessageDao.updateInTx(userMessageList)
+                            DataBaseUtil.getInstance(this@MainActivity)
+                                .getDaoSession()!!.userMessageDao.updateInTx(userMessageList)
 //                            NetWorkUtil.getInstance().errorUpload("用户类型已全部修改为 0 ")
                             Log.i("updateAllUserType0", "修改之前")
                         } else if (type == "reboot") {
@@ -1089,8 +1105,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             val userId = addFaceImageJsonObject["userId"].asInt
                             val userType = addFaceImageJsonObject["userType"].asInt
                             val imageUrl = addFaceImageJsonObject["imageUrl"].asString
-                            KotlinMvpApp.userId = userId
-                            KotlinMvpApp.userType = userType
+                            DustbinBrainApp.userId = userId
+                            DustbinBrainApp.userType = userType
                             Log.i("addFaceImage", addFaceImageJsonObject.toString())
                             Log.i("addFaceImage", "$userId,$userType,$imageUrl")
 
@@ -1104,9 +1120,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             //  本地已经有这个人脸特征了，则删除掉原有的人脸特征，添加新的人脸特征
                             if (userMessage != null) {
                                 //  人脸库中删除这个人脸特征
-                                mFacePassHandler!!.deleteFace(userMessage.getFaceToken().toByteArray())
+                                mFacePassHandler!!.deleteFace(
+                                    userMessage.getFaceToken().toByteArray()
+                                )
                                 //  本地数据库中删除这个用户
-                                DataBaseUtil.getInstance(this@MainActivity).getDaoSession()!!.userMessageDao.delete(userMessage)
+                                DataBaseUtil.getInstance(this@MainActivity)
+                                    .getDaoSession()!!.userMessageDao.delete(userMessage)
                                 Log.i("addFaceImage", "删除旧的人脸特征与注册信息" + userMessage.getUserId())
                             } else {
                                 Log.i("addFaceImage", "不存在该用户，可以添加$userId")
@@ -1129,11 +1148,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         })
     }
 
-    fun goControlActivity(){
+    fun goControlActivity() {
 
     }
 
     private var nowFaceToken: String? = null
+
     /**
      * 下载人脸图片
      */
@@ -1146,7 +1166,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             imageUrl,
             Environment.getExternalStorageDirectory().toString(),
             System.currentTimeMillis().toString() + ".jpg",
-            object : DownloadUtil.OnDownloadListener{
+            object : DownloadUtil.OnDownloadListener {
                 override fun onDownloadSuccess(file: File) {
                     Log.i("addFaceImage", "下载完毕")
                     try {
@@ -1175,7 +1195,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 DataBaseUtil.getInstance(this@MainActivity)
                                     .insertUserIdAndFaceTokenThread(userId, userType, nowFaceToken)
                                 val deviceId: String? = mmkv!!.decodeString("device_id")
-                                val hasMap :MutableMap<String,String> = mutableMapOf(
+                                val hasMap: MutableMap<String, String> = mutableMapOf(
                                     "user_id" to userId.toString(),
                                     "device_id" to deviceId!!
                                 )

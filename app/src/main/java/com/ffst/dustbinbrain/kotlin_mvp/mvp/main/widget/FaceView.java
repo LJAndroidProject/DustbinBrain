@@ -11,6 +11,8 @@ import android.view.View;
 
 import androidx.core.content.ContextCompat;
 
+import com.blankj.utilcode.util.LogUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +33,7 @@ public class FaceView extends View {
     private Paint idPaint = new Paint();
     private Paint posePaint = new Paint();
     private Paint backPaint = new Paint();
-    public static int circleDimater = 480;
+    public static int circleDimater = 461;
 
     private void initData() {
         initPaint();
@@ -156,6 +158,7 @@ public class FaceView extends View {
     private void drawCycle(Canvas canvas) {
         int measuredHeight = getHeight();
         int measuredWidth = getWidth();
+        LogUtils.dTag("FaceView","measuredWidth:"+measuredWidth+",measuredHeight"+measuredHeight);
         canvas.drawCircle(measuredWidth/2,measuredHeight/2, circleDimater /2, mCirclePaint);
     }
 }

@@ -3,7 +3,7 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="AppThemeBarStyle">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@android:color/white</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowBackground">@android:color/white</item>
@@ -11,6 +11,7 @@
 
     <style name="AppThemeBarStyle" parent="Theme.AppCompat.Light.NoActionBar">
         <!--全局标题栏和状态栏配置-->
+        <item name="colorPrimary">@color/colorPrimary</item>
         <item name="title_bar_background">@color/colorPrimary</item>
         <item name="title_bar_back_icon">@drawable/back</item>
         <item name="title_bar_text_color">@color/white</item>
@@ -41,6 +42,9 @@
         <item name="android:windowActionBar">true</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
         <!--全局标题栏和状态栏配置-->
         <item name="title_bar_background">@color/colorPrimary</item>
         <item name="title_bar_back_icon">@drawable/back</item>
@@ -48,6 +52,5 @@
         <item name="title_bar_show_line">false</item>
         <item name="loading_view_color">@color/colorAccent</item>
         <item name="loading_view_background">@color/white</item>
-        <!--全局标题栏和状态栏配置-->
     </style>
 </resources>

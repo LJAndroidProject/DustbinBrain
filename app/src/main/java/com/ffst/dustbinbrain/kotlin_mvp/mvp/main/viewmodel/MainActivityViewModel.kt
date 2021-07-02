@@ -13,24 +13,40 @@ import java.lang.Exception
  *on 2021/6/16
  */
 class MainActivityViewModel : ViewModel() {
-    class WorkTimeData{
+    class WorkTimeData {
         var success = false
-        var errorMsg: String? = null
-        var binsWorkTimeBean : BinsWorkTimeBean? = null
+        var msg: String? = null
+        var binsWorkTimeBean: BinsWorkTimeBean? = null
+    }
+
+    class DeviceQrcode {
+        //{
+        //  "code": 1,
+        //  "msg": "获取成功",
+        //  "time": "1625208959",
+        //  "data": "https://ffadmin.fenfeneco.com/uploads/qrcode_device/20210702/2021070260deb608f38351570.png"
+        //}
+        var success = false
+        var code: String? = null
+        var msg: String? = null
+        var time: String? = null
+        var data: String? = null
     }
 
     var liveDataForDustbinConfig = MutableLiveData<WorkTimeData>()
+    var liveDataForDeviceQrcode = MutableLiveData<DeviceQrcode>()
 
-    fun getBinsWorkTime(){
-        NetApiManager.getInstance().getBinsWorkTime(object :ResponseListener{
+    fun getBinsWorkTime(map: MutableMap<String, String>?) {
+        NetApiManager.getInstance().getBinsWorkTime(map, object : ResponseListener {
             override fun onSuccess(extension: String?) {
                 var data = WorkTimeData()
                 data.success = true
                 try {
-                    data.binsWorkTimeBean = Gson().fromJson(extension,BinsWorkTimeBean::class.java)
-                }catch (e:Exception){
+                    data.msg = extension
+                    data.binsWorkTimeBean = Gson().fromJson(extension, BinsWorkTimeBean::class.java)
+                } catch (e: Exception) {
                     data.success = false
-                    data.errorMsg = "服务器数据解析异常"
+                    data.msg = "服务器数据解析异常"
                     liveDataForDustbinConfig.postValue(data)
                 }
                 liveDataForDustbinConfig.postValue(data)
@@ -40,10 +56,10 @@ class MainActivityViewModel : ViewModel() {
                 var data = WorkTimeData()
                 data.success = false
                 try {
-                    data.binsWorkTimeBean = Gson().fromJson(extension,BinsWorkTimeBean::class.java)
-                }catch (e:Exception){
+                    data.binsWorkTimeBean = Gson().fromJson(extension, BinsWorkTimeBean::class.java)
+                } catch (e: Exception) {
                     data.success = false
-                    data.errorMsg = "服务器数据解析异常"
+                    data.msg = "服务器数据解析异常"
                     liveDataForDustbinConfig.postValue(data)
                 }
                 liveDataForDustbinConfig.postValue(data)
@@ -52,8 +68,37 @@ class MainActivityViewModel : ViewModel() {
         })
     }
 
-    fun registerTCP(tcp_client_id:String){
-        NetApiManager.getInstance().registerTCP(tcp_client_id,object :ResponseListener{
+    fun getDeviceQrcode(map: MutableMap<String, String>) {
+        NetApiManager.getInstance().getDeviceQrcode(map, object : ResponseListener {
+            override fun onSuccess(extension: String?) {
+                var deviceQrcode = DeviceQrcode()
+                try {
+                    deviceQrcode = Gson().fromJson(extension,DeviceQrcode::class.java)
+                    deviceQrcode.success = true
+                } catch (e: Exception) {
+                    deviceQrcode.success = false
+                    deviceQrcode.msg = "服务器数据解析异常"
+                    liveDataForDeviceQrcode.postValue(deviceQrcode)
+                }
+            }
+
+            override fun onFail(extension: String?) {
+                var deviceQrcode = DeviceQrcode()
+                deviceQrcode.success = false
+                try {
+                    deviceQrcode = Gson().fromJson(extension, DeviceQrcode::class.java)
+                } catch (e: Exception) {
+                    deviceQrcode.success = false
+                    deviceQrcode.msg = "服务器数据解析异常"
+                    liveDataForDeviceQrcode.postValue(deviceQrcode)
+                }
+                liveDataForDeviceQrcode.postValue(deviceQrcode)
+            }
+        })
+    }
+
+    fun registerTCP(tcp_client_id: String) {
+        NetApiManager.getInstance().registerTCP(tcp_client_id, object : ResponseListener {
             override fun onSuccess(extension: String?) {
             }
 
@@ -62,8 +107,8 @@ class MainActivityViewModel : ViewModel() {
         })
     }
 
-    fun postFaceRegisterSuccessLog(map: MutableMap<String,String>){
-        NetApiManager.getInstance().postFaceRegisterSuccessLog(map,object :ResponseListener{
+    fun postFaceRegisterSuccessLog(map: MutableMap<String, String>) {
+        NetApiManager.getInstance().postFaceRegisterSuccessLog(map, object : ResponseListener {
             override fun onSuccess(extension: String?) {
             }
 

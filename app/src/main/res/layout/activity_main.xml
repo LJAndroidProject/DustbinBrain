@@ -5,26 +5,28 @@
     android:layout_height="match_parent"
     android:background="@mipmap/main_bg"
     tools:context=".mvp.main.view.MainActivity">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
+
         <TextView
-            android:layout_marginTop="@dimen/y68"
-            android:text="扫码登录"
-            android:gravity="center"
-            android:textColor="@color/white"
-            android:textSize="43sp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-        <ImageView
-            android:layout_marginTop="@dimen/y43"
-            android:layout_gravity="center"
-            android:src="@mipmap/qr_login_regist"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            />
+            android:layout_marginTop="@dimen/y68"
+            android:gravity="center"
+            android:text="扫码登录"
+            android:textColor="@color/white"
+            android:textSize="43sp" />
+
+        <ImageView
+            android:id="@+id/show_login_qr"
+            android:layout_width="@dimen/y360"
+            android:layout_height="@dimen/y360"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/y43"
+            android:src="@mipmap/qr_login_regist" />
 
 
         <TextView
@@ -34,8 +36,14 @@
             android:textColor="@android:color/white"
             android:textSize="16sp" />
     </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true">
+
         <FrameLayout
-            android:layout_alignParentBottom="true"
+            android:id="@+id/fl_camera"
             android:layout_width="@dimen/x480"
             android:layout_height="@dimen/y640"
             android:layout_centerHorizontal="true">
@@ -51,4 +59,26 @@
                 android:layout_height="match_parent" />
 
         </FrameLayout>
+
+    </RelativeLayout>
+    <ImageView
+        android:id="@+id/phone_login_siv"
+        android:layout_width="@dimen/x123"
+        android:layout_height="@dimen/x123"
+        android:layout_above="@+id/video_call_siv"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="@dimen/x15"
+        android:layout_marginBottom="@dimen/y23"
+        android:src="@mipmap/phone_btn" />
+
+    <ImageView
+        android:layout_width="@dimen/x123"
+        android:layout_height="@dimen/x123"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginRight="@dimen/x15"
+        android:layout_marginBottom="@dimen/y23"
+        android:id="@+id/video_call_siv"
+
+        android:src="@mipmap/video_call_btn" />
 </RelativeLayout>

@@ -150,20 +150,6 @@ public class ImlSerialPortRequest {
 
 
         /**
-         * 测距
-         * @param doorNumber 第几扇门
-         * */
-        byte[] measureTheDistance(int doorNumber);
-
-
-        /**
-         * 测重量
-         * @param doorNumber 第几扇门
-         * */
-        byte[] measureTheWeight(int doorNumber);
-
-
-        /**
          * 开启消毒
          * @param doorNumber 第几扇门
          * */
@@ -285,6 +271,6 @@ public class ImlSerialPortRequest {
          * 读取数据
          * @param doorNumber
          * */
-        byte[] getDate(int doorNumber);
+        byte[] getData(int doorNumber);
     }
 }

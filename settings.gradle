@@ -1,1 +1,1 @@
-include ':app', ':mvp', ':annotation', ':compiler', ':aop', ':utils',':serialportlibrary'
+include ':app', ':mvp', ':annotation', ':compiler', ':aop', ':utils',':serialportlibrary',":trtccallingdemo",":login",":debug"

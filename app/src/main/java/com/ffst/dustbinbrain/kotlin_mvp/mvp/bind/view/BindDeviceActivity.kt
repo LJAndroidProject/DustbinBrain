@@ -105,7 +105,7 @@ class BindDeviceActivity : BaseActivity() {
                     .show()
             } else {
                 hideLoadingView()
-                Toast.makeText(this, data.errorMsg, Toast.LENGTH_SHORT)
+                Toast.makeText(this, data.msg, Toast.LENGTH_SHORT)
                     .show()
             }
         }

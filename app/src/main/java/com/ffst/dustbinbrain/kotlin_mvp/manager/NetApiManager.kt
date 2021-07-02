@@ -29,7 +29,7 @@ class NetApiManager private constructor(){
         ApiClient.getInstance().getDustbinConfig(device_id,mange_code,object : ApiCallBack{
             override fun onFinish(result: JSONObject) {
                 LogUtils.dTag(TAG,"请求结果${result.toString()}")
-               val code:Int = result.optInt("code")
+                val code:Int = result.optInt("code")
                 if (code === 1){
                     listener.onSuccess(result.toString())
                 }else{
@@ -40,8 +40,8 @@ class NetApiManager private constructor(){
 
     }
 
-    fun getBinsWorkTime(listener: ResponseListener){
-        ApiClient.getInstance().getBinsWorkTime(object :ApiCallBack{
+    fun getBinsWorkTime(map: MutableMap<String,String>?,listener: ResponseListener){
+        ApiClient.getInstance().getBinsWorkTime(map,object :ApiCallBack{
             override fun onFinish(result: JSONObject) {
                 LogUtils.dTag(TAG,"请求结果${result.toString()}")
                 val code:Int = result.optInt("code")
@@ -70,6 +70,20 @@ class NetApiManager private constructor(){
 
     fun postFaceRegisterSuccessLog(map: MutableMap<String,String>,listener: ResponseListener){
         ApiClient.getInstance().postFaceRegisterSuccessLog(map,object : ApiCallBack{
+            override fun onFinish(result: JSONObject) {
+                LogUtils.dTag(TAG,"请求结果${result.toString()}")
+                val code:Int = result.optInt("code")
+                if (code === 1){
+                    listener.onSuccess(result.toString())
+                }else{
+                    listener.onFail(result.toString())
+                }
+            }
+        })
+    }
+
+    fun getDeviceQrcode(map: MutableMap<String,String>,listener: ResponseListener){
+        ApiClient.getInstance().getDeviceQrcode(map,object : ApiCallBack{
             override fun onFinish(result: JSONObject) {
                 LogUtils.dTag(TAG,"请求结果${result.toString()}")
                 val code:Int = result.optInt("code")

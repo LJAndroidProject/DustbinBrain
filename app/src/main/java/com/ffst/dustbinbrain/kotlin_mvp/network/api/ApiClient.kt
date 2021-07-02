@@ -65,10 +65,10 @@ class ApiClient private constructor() {
     /**
      * 获取垃圾投放时间
      */
-    fun getBinsWorkTime(apiCallBack: ApiCallBack) {
+    fun getBinsWorkTime(map: MutableMap<String,String>?,apiCallBack: ApiCallBack) {
         val url: String = CommonConstants.IP
         ThreadManager.getInstance().execute {
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getBinWorkTime()
+            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getBinWorkTime(map)
                 .enqueue(object : Callback<ResponseBody> {
                     override fun onResponse(
                         call: Call<ResponseBody?>?,
@@ -113,7 +113,7 @@ class ApiClient private constructor() {
         val url: String = CommonConstants.IP
         ThreadManager.getInstance().execute{
             val param = getPostParams()
-            map.putAll(map)
+            map.putAll(param)
             RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).postFaceRegisterSuccessLog(map).enqueue(object : Callback<ResponseBody>{
                 override fun onResponse(
                     call: Call<ResponseBody>,
@@ -123,6 +123,25 @@ class ApiClient private constructor() {
                     jsonResponseAndCallBack(apiCallBack, response)
                 }
 
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    jsonResponseAndCallBack(apiCallBack, null, t)
+                }
+
+            })
+        }
+    }
+
+    fun getDeviceQrcode(map: MutableMap<String, String>, apiCallBack: ApiCallBack){
+        val url: String = CommonConstants.IP
+        ThreadManager.getInstance().execute{
+            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getDeviceQrcode(map).enqueue(object : Callback<ResponseBody>{
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody?>?
+                ) {
+                    LogUtils.dTag(TAG, response.toString())
+                    jsonResponseAndCallBack(apiCallBack, response)
+                }
                 override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
                     jsonResponseAndCallBack(apiCallBack, null, t)
                 }

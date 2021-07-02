@@ -2,7 +2,7 @@ package com.ffst.dustbinbrain.kotlin_mvp.utils
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import com.ffst.dustbinbrain.kotlin_mvp.app.KotlinMvpApp
+import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.*
 
 /**
@@ -77,7 +77,7 @@ class DataBaseUtil {
             //  对应底库中的faceToken
             userMessage.setFaceToken(faceToken)
             //  设置用户类型
-            userMessage.setUserType(KotlinMvpApp.userType!!.toLong())
+            userMessage.setUserType(DustbinBrainApp.userType!!.toLong())
             //  上次使用时间
             userMessage.setLastUsedTime(System.currentTimeMillis())
             //  在数据库中的注册时间

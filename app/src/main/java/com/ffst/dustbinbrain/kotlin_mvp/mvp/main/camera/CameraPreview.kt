@@ -5,6 +5,8 @@ import android.hardware.Camera
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import com.blankj.utilcode.util.LogUtils
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.FaceView
 
 /**
  * Created by LiuJW
@@ -88,6 +90,10 @@ class CameraPreview : SurfaceView, SurfaceHolder.Callback {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val height = MeasureSpec.getSize(heightMeasureSpec)
+        LogUtils.dTag(
+            "FaceView",
+            "measuredWidth:" + measuredWidth + ", measuredHeight:" + measuredHeight + ", circleDimater:" + FaceView.circleDimater
+        )
         setMeasuredDimension((width * scaleW).toInt(), (height * scaleH).toInt())
     }
 
