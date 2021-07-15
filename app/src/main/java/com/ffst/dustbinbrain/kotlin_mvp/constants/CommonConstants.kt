@@ -12,6 +12,7 @@ class CommonConstants {
         //微信扫码登录
         val LOGIN: String = IP + "index.php/index/index/weixinRegister?device_id="
 
+
     }
 
 

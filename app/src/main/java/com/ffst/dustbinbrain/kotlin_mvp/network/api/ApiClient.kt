@@ -3,10 +3,12 @@ package com.ffst.dustbinbrain.kotlin_mvp.network.api
 import android.text.TextUtils
 import com.blankj.utilcode.util.LogUtils
 import com.ffst.dustbinbrain.kotlin_mvp.constants.CommonConstants
+import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
 import com.ffst.dustbinbrain.kotlin_mvp.manager.NetApiManager
 import com.ffst.dustbinbrain.kotlin_mvp.manager.ThreadManager
 import com.ffst.dustbinbrain.kotlin_mvp.utils.FenFenCommonUtil
 import com.tencent.mmkv.MMKV
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import org.json.JSONException
 import org.json.JSONObject
@@ -45,7 +47,7 @@ class ApiClient private constructor() {
             val map = getPostParams()
             map.put("device_id", device_id)
             map.put("mange_code", mange_code)
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getDustbinConfig(map)
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).getDustbinConfig(map)
                 .enqueue(object : Callback<ResponseBody?> {
                     override fun onResponse(
                         call: Call<ResponseBody?>?,
@@ -68,7 +70,7 @@ class ApiClient private constructor() {
     fun getBinsWorkTime(map: MutableMap<String,String>?,apiCallBack: ApiCallBack) {
         val url: String = CommonConstants.IP
         ThreadManager.getInstance().execute {
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getBinWorkTime(map)
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).getBinWorkTime(map)
                 .enqueue(object : Callback<ResponseBody> {
                     override fun onResponse(
                         call: Call<ResponseBody?>?,
@@ -91,7 +93,7 @@ class ApiClient private constructor() {
         ThreadManager.getInstance().execute {
             val map = getPostParams()
             map.put("tcp_client_id", tcp_client_id)
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).registerTCP(map)
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).registerTCP(map)
                 .enqueue(object : Callback<ResponseBody> {
                     override fun onResponse(
                         call: Call<ResponseBody>,
@@ -114,7 +116,7 @@ class ApiClient private constructor() {
         ThreadManager.getInstance().execute{
             val param = getPostParams()
             map.putAll(param)
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).postFaceRegisterSuccessLog(map).enqueue(object : Callback<ResponseBody>{
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).postFaceRegisterSuccessLog(map).enqueue(object : Callback<ResponseBody>{
                 override fun onResponse(
                     call: Call<ResponseBody>,
                     response: Response<ResponseBody?>?
@@ -134,7 +136,28 @@ class ApiClient private constructor() {
     fun getDeviceQrcode(map: MutableMap<String, String>, apiCallBack: ApiCallBack){
         val url: String = CommonConstants.IP
         ThreadManager.getInstance().execute{
-            RetrofitClient.buildClient(url)!!.create(ServerAPI::class.java).getDeviceQrcode(map).enqueue(object : Callback<ResponseBody>{
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).getDeviceQrcode(map).enqueue(object : Callback<ResponseBody>{
+                override fun onResponse(
+                    call: Call<ResponseBody>,
+                    response: Response<ResponseBody?>?
+                ) {
+                    LogUtils.dTag(TAG, response.toString())
+                    jsonResponseAndCallBack(apiCallBack, response)
+                }
+                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                    jsonResponseAndCallBack(apiCallBack, null, t)
+                }
+
+            })
+        }
+    }
+
+    //垃圾箱状态上报
+    fun postStatusUpload(json: String, apiCallBack: ApiCallBack){
+        val url: String = CommonConstants.IP
+        ThreadManager.getInstance().execute{
+            val body:RequestBody = RetrofitClient.createBodyWithJson(json)!!
+            RetrofitClient.buildJsonClient(url)!!.create(ServerAPI::class.java).postStatusUpload(body).enqueue(object : Callback<ResponseBody>{
                 override fun onResponse(
                     call: Call<ResponseBody>,
                     response: Response<ResponseBody?>?
@@ -156,7 +179,7 @@ class ApiClient private constructor() {
         val nowTime = System.currentTimeMillis() / 1000
         val sign = FenFenCommonUtil.md5(nowTime.toString() + FenFenCommonUtil.key)
             ?.uppercase(Locale.getDefault())
-        val device_id = mmkv?.decodeString("device_id")
+        val device_id = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
         var map: MutableMap<String, String> = mutableMapOf(
             "sign" to sign.toString(),
             "timestamp" to nowTime.toString()
@@ -166,6 +189,8 @@ class ApiClient private constructor() {
         }
         return map
     }
+
+
 
     // 所有返回信息为json的接口,回调信息统一处理.
     private fun jsonResponseAndCallBack(

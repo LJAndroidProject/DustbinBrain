@@ -8,4 +8,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="ffst_btn">#4188F7</color>
     <color name="video_call_btn">#F20000</color>
+    <color name="green_ffbtn">#4CAF50</color>
 </resources>

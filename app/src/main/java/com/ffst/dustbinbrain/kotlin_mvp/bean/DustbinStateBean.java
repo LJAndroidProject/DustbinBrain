@@ -212,4 +212,25 @@ public class DustbinStateBean {
                 ", artificialDoorLock=" + artificialDoorLock +
                 '}';
     }
+
+    public String toChineseString() {
+        return "垃圾箱状态{" +
+                "id=" + id +
+                ", 门板号=" + doorNumber +
+                ", 垃圾箱类型='" + dustbinBoxType + '\'' +
+                ", 垃圾箱类型编号='" + dustbinBoxNumber + '\'' +
+                ", 重量=" + dustbinWeight +
+                ", 温度=" + temperature +
+                ", 湿度=" + humidity +
+                ", 关门失败次数=" + closeFailNumber +
+                ", 是否开门=" + doorIsOpen +
+                ", 人接近=" + proximitySwitch +
+                ", 人工门=" + artificialDoor +
+                ", 测满=" + isFull +
+                ", 推杆过流=" + pushRod +
+                ", 通信异常=" + abnormalCommunication +
+                ", 投料口锁=" + deliverLock +
+                ", 人工门锁=" + artificialDoorLock +
+                '}';
+    }
 }

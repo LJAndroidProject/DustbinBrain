@@ -1,6 +1,7 @@
 package com.ffst.dustbinbrain.kotlin_mvp.utils
 
 import android.util.Log
+import com.ffst.dustbinbrain.kotlin_mvp.bean.OrderMessage
 import com.serialportlibrary.util.ByteStringUtil
 
 /**
@@ -64,13 +65,8 @@ class OrderUtil {
 
         fun generateOrder(function: Byte, dataLength:Byte , targetDoor: Int, parameter: ByteArray): ByteArray {
             val head: ByteArray = FRAME_HEADER_BYTES
-            Log.i(SerialPortUtil.TAG, "帧头：" + ByteStringUtil.byteArrayToHexStr(head))
             val length = byteArrayOf(dataLength)
-            Log.i(SerialPortUtil.TAG, "长度：" + ByteStringUtil.byteArrayToHexStr(length))
             val order = byteArrayOf( (targetDoor and 0xff).toByte(),function)
-            Log.i(SerialPortUtil.TAG, "门板+功能：" + ByteStringUtil.byteArrayToHexStr(order))
-            Log.i(SerialPortUtil.TAG, "开关：" + ByteStringUtil.byteArrayToHexStr(parameter))
-
             val bytes = ByteArray(head.size+length.size+order.size+parameter.size)
             System.arraycopy(head, 0, bytes, 0, head.size)
             System.arraycopy(length, 0, bytes, head.size, length.size)
@@ -78,6 +74,23 @@ class OrderUtil {
             System.arraycopy(parameter, 0, bytes, head.size+length.size+order.size, parameter.size)
 
             return bytes
+        }
+        fun orderAnalysis(bytes:ByteArray):OrderMessage{
+            var orderMessage = OrderMessage()
+            //帧头
+            orderMessage.head = byteArrayOf(bytes[0],bytes[1])
+            //数据长度
+            orderMessage.length = byteArrayOf(bytes[2])
+            //地址码
+            orderMessage.address = byteArrayOf(bytes[3])
+            //功能码
+            orderMessage.order = byteArrayOf(bytes[4])
+            //数据区
+            val datas =ByteArray(bytes.size-5)
+            System.arraycopy(bytes,5,datas,0,datas.size)
+            orderMessage.dataContent = datas
+
+            return orderMessage
         }
     }
 }

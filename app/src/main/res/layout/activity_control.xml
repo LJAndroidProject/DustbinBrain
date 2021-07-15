@@ -1,30 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:paddingLeft="20dp"
-    android:paddingRight="20dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
     >
     <TextView
-        android:layout_marginTop="100dp"
-        android:paddingStart="70dp"
-        android:paddingEnd="70dp"
-        android:textSize="@dimen/sp_18"
+        android:layout_marginTop="@dimen/y100"
+        android:paddingEnd="@dimen/x70"
+        android:layout_marginStart="@dimen/dp_30"
+        android:textSize="@dimen/sp_38"
         android:textColor="@color/ffst_btn"
         android:text="欢迎用户 13813813800，进入投递界面。"
         android:id="@+id/control_welcome_textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
-    <TextView
-        android:visibility="gone"
-        android:text="摄像头异常"
-        android:padding="20dp"
-        android:layout_alignParentRight="true"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+
     <TextView
         android:visibility="gone"
         android:layout_below="@+id/control_welcome_textView"
@@ -57,22 +47,45 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"/>
 
-    <TextView
-        android:id="@+id/control_exit_btn"
-        android:visibility="gone"
-        android:onClick="exitControl"
-        android:text="退出"
-        android:padding="20dp"
-        android:gravity="center"
-        android:textSize="20sp"
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_centerHorizontal="true"
+        android:padding="@dimen/x50"
+        android:id="@+id/dustbin_list"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/control_image"
+        android:layout_marginTop="0dp"
+        android:overScrollMode="never" />
+
+    <LinearLayout
         android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:visibility="gone"
-        android:background="#A1FFFFFF"
-        android:id="@+id/textView"
-        android:textColor="#FF00"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/resgit_face_btn"
+            android:onClick="onControl"
+            android:text="人脸注册"
+            android:padding="20dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:background="@drawable/shape_radius_green_left_top_13"
+            android:textColor="@color/white"
+            android:layout_height="@dimen/y120"/>
+        <TextView
+            android:id="@+id/control_exit_btn"
+            android:onClick="onControl"
+            android:text="退出"
+            android:padding="20dp"
+            android:gravity="center"
+            android:textSize="20sp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:background="@drawable/shape_radius_blue_right_top_13"
+            android:layout_height="@dimen/y120"/>
+    </LinearLayout>
+
 </RelativeLayout>

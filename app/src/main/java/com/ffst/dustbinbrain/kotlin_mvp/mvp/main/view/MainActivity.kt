@@ -1,6 +1,7 @@
 package com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -8,6 +9,7 @@ import android.graphics.Matrix
 import android.graphics.RectF
 import android.os.Environment
 import android.os.Handler
+import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
@@ -27,6 +29,8 @@ import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.*
+import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
+import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
 import com.ffst.dustbinbrain.kotlin_mvp.manager.ThreadManager
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraManager
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraPreviewData
@@ -34,14 +38,13 @@ import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.SettingVar
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.viewmodel.MainActivityViewModel
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.CicleViewOutlineProvider
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.FaceView
-import com.ffst.dustbinbrain.kotlin_mvp.utils.DataBaseUtil
-import com.ffst.dustbinbrain.kotlin_mvp.utils.DownloadUtil
-import com.ffst.dustbinbrain.kotlin_mvp.utils.FenFenCommonUtil
-import com.ffst.dustbinbrain.kotlin_mvp.utils.TCPConnectUtil
+import com.ffst.dustbinbrain.kotlin_mvp.service.ResidentService
+import com.ffst.dustbinbrain.kotlin_mvp.utils.*
 import com.ffst.mvp.base.activity.BaseActivity
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
+import com.littlegreens.netty.client.status.ConnectState
 import com.tencent.mmkv.MMKV
 import kotlinx.android.synthetic.main.activity_main.*
 import mcv.facepass.FacePassException
@@ -58,9 +61,16 @@ import java.util.concurrent.ArrayBlockingQueue
 class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     companion object {
-        val SDK_MODE: FacePassHandler.FacePassSDKMode = FacePassHandler.FacePassSDKMode.MODE_OFFLINE
+        val SDK_MODE: FacePassSDKMode = FacePassSDKMode.MODE_OFFLINE
         const val DEBUG_TAG: String = FenFenCommonUtil.FACE_TAG
+        const val MY_TAG = "人脸识别调试"
         val group_name = FenFenCommonUtil.face_group_name
+        val CONTROL_RESULT_CODE = 300
+    }
+
+    //  人脸识别模式
+    enum class FacePassSDKMode {
+        MODE_ONLINE, MODE_OFFLINE
     }
 
     var viewModel: MainActivityViewModel? = null
@@ -106,22 +116,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     private var mImageCache: FaceImageCache? = null
 
     /*DetectResult queue*/
-    class RecognizeData {
-        var message: ByteArray
-        lateinit var trackOpt: Array<FacePassTrackOptions?>
-
-        constructor(message: ByteArray) {
-            this.message = message
-        }
-
-        constructor(message: ByteArray, opt: Array<FacePassTrackOptions?>) {
-            this.message = message
-            trackOpt = opt
-        }
-    }
-
-    var mRecognizeDataQueue: ArrayBlockingQueue<RecognizeData>? =
-        null
+    var mDetectResultQueue: ArrayBlockingQueue<ByteArray>? = null
     var mFeedFrameQueue: ArrayBlockingQueue<CameraPreviewData>? = null
 
     /*Toast*/
@@ -137,6 +132,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     private val mFaceOperationBtn: ImageView? = null
 
+    private var canRecognize = true
+
     var deviceCode: String? = null
 
     /*图片缓存*/
@@ -145,6 +142,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     private val gson = Gson()
 
+    private var userMessageDao: UserMessageDao? = null
+
+    private var app: DustbinBrainApp? = null
+
     override fun layoutId(): Int {
         return R.layout.activity_main
     }
@@ -152,23 +153,38 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     override fun initViewData() {
         viewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
         mmkv = MMKV.defaultMMKV()
+        app = application as DustbinBrainApp?
         mImageCache = FaceImageCache()
-        mRecognizeDataQueue = ArrayBlockingQueue(5)
+        mDetectResultQueue = ArrayBlockingQueue(5)
         mFeedFrameQueue = ArrayBlockingQueue(1)
+        deviceCode = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
         initAndroidHandler()
         /* 初始化界面 */
         initView()
         bindData()
+        //  初始化 greenDao 数据库，以及数据库操作对象
+        userMessageDao = DataBaseUtil.getInstance(this@MainActivity).daoSession.userMessageDao
         initTCP()
         //获取投放时间
-        deviceCode = mmkv?.decodeString("device_id")
         var map: MutableMap<String, String> = mutableMapOf(
             "device_id" to deviceCode.toString()
         )
-        viewModel!!.getBinsWorkTime(null)
-        //获取投放时间
-        viewModel!!.getDeviceQrcode(null)
+        viewModel!!.getBinsWorkTime(map)
+        //获取投放二维码
+        viewModel!!.getDeviceQrcode(map)
 
+
+        //  设置垃圾箱配置
+        val dustbinConfig =
+            DataBaseUtil.getInstance(this).daoSession.dustbinConfigDao.queryBuilder().unique()
+        DustbinBrainApp.dustbinConfig = dustbinConfig
+        DustbinBrainApp.dustbinBeanList =
+            DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null)
+        //  启动APP默认关闭所有门
+        closeAllDoor()
+
+        //  必须在第一次语音播报前 先初始化对象，否则可能出现第一次语音播报无声音的情况
+        VoiceUtil.getInstance()
         //初始化人脸SDK
         initFaceSDK()
 
@@ -178,33 +194,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         mRecognizeThread!!.start()
         mFeedFrameThread = FeedFrameThread()
         mFeedFrameThread!!.start()
-
-
-    }
-
-    fun addBindTest() {
-        val facePath: String =
-            Environment.getExternalStorageDirectory().toString() + "/testface.jpg"
-        val bitmap = BitmapFactory.decodeFile(facePath)
-        try {
-            val result = mFacePassHandler!!.addFace(bitmap)
-            if (result != null) {
-                if (result.result == 0) {
-                    LogUtils.d("add face successfully！")
-                    val faceToken: ByteArray = result.faceToken
-                    val back = mFacePassHandler!!.bindGroup(group_name, faceToken);
-                    val sss = if (back) "success " else "failed"
-                    LogUtils.d("bind  $sss")
-                } else if (result.result == 1) {
-                    LogUtils.d("no face ！")
-                } else {
-                    LogUtils.d("quality problem！")
-                }
-            }
-        } catch (e: FacePassException) {
-            e.printStackTrace()
-            LogUtils.dTag(DEBUG_TAG, e.message)
-        }
+        //  开启读取数据服务，定时器
+        startService(Intent(this, ResidentService::class.java))
     }
 
     private fun initView() {
@@ -254,11 +245,88 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         manager!!.setPreviewDisplay(preview)
         /* 注册相机回调函数 */
         manager!!.setListener(this)
+        show_login_qr.setImageBitmap(QRCodeUtil.getAppletLoginCode("https://ffadmin.fenfeneco.com/index.php/index/index/weixinRegister?device_id=" + deviceCode + "&device_type=2"));
+        video_call_siv.setOnClickListener {
+        }
+
     }
 
     override fun onResume() {
         super.onResume()
         manager!!.open(windowManager, false, cameraWidth, cameraHeight)
+        canRecognize = true
+        LogUtils.iTag(TAG, "回到首页，开启人脸识别")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        LogUtils.iTag(TAG, "页面跳转，暂停人脸识别")
+        canRecognize = false
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            CONTROL_RESULT_CODE -> {
+                DustbinBrainApp.userId = 0;
+                DustbinBrainApp.userType = 0;
+                if (data != null) {
+                    val exitCode = data.getIntExtra("exitCode", 0)
+                    //  结算超时
+                    if (exitCode != 0) {
+                        if (exitCode == 1) {
+                            closeAllDoor()
+                        }
+                    }
+                }
+                Thread {
+                    for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+                        //  关补光灯
+                        SerialProManager.getInstance().closeLight(dustbinStateBean.doorNumber)
+                        try {
+                            Thread.sleep(50)
+                        } catch (e: java.lang.Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }.start()
+            }
+            else -> {
+
+            }
+        }
+    }
+
+    //  关闭所有门
+    private fun closeAllDoor() {
+        //  启动APP就关闭所有门
+        object : Thread() {
+            override fun run() {
+                super.run()
+                for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+                    SerialPortUtil.getInstance().sendData(
+                        SerialProManager.getInstance()
+                            .closeDoor(dustbinStateBean.doorNumber)
+                    )
+                    try {
+                        sleep(250)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+
+                    //  开排气扇
+                    SerialPortUtil.getInstance().sendData(
+                        SerialProManager.getInstance()
+                            .openExhaustFan(dustbinStateBean.doorNumber)
+                    )
+                    try {
+                        sleep(250)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }.start()
     }
 
     /**
@@ -291,33 +359,50 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             applicationContext.assets,
                             "attr.pose_blur.align.av200.190630.bin"
                         )
-
                         //单目使用CPU rgb活体模型
                         config.livenessModel = FacePassModel.initModel(
                             applicationContext.assets,
-                            "liveness.CPU.rgb.int8.E.bin"
+                            "liveness.CPU.rgb.int8.D.bin"
+                        )
+                        //双目使用CPU rgbir活体模型
+                        config.rgbIrLivenessModel = FacePassModel.initModel(
+                            applicationContext.assets,
+                            "liveness.CPU.rgbir.int8.D.bin"
                         )
                         //当单目或者双目有一个使用GPU活体模型时，请设置livenessGPUCache
-                        //config.livenessGPUCache = FacePassModel.initModel(getApplicationContext().getAssets(), "liveness.GPU.AlgoPolicy.E.cache");
+                        config.livenessGPUCache = FacePassModel.initModel(
+                            applicationContext.assets,
+                            "liveness.GPU.AlgoPolicy.D.cache"
+                        )
                         config.searchModel = FacePassModel.initModel(
                             applicationContext.assets,
-                            "feat2.arm.H.v1.0_1core.bin"
+                            "feat2.arm.G.v1.0_1core.bin"
                         )
                         config.detectModel =
-                            FacePassModel.initModel(applicationContext.assets, "detector.arm.E.bin")
+                            FacePassModel.initModel(applicationContext.assets, "detector.arm.D.bin")
                         config.detectRectModel = FacePassModel.initModel(
                             applicationContext.assets,
-                            "detector_rect.arm.E.bin"
+                            "detector_rect.arm.D.bin"
                         )
                         config.landmarkModel =
                             FacePassModel.initModel(applicationContext.assets, "pf.lmk.arm.D.bin")
-                        config.rcAttributeModel = FacePassModel.initModel(
+                        config.smileModel = FacePassModel.initModel(
                             applicationContext.assets,
-                            "attr.RC.gray.12M.arm.200229.bin"
+                            "attr.smile.mgf29.0.1.1.181229.bin"
                         )
-                        config.rcAttributeEnabled = true
-                        config.searchThreshold = 65f
-                        config.livenessThreshold = 65f
+                        config.ageGenderModel = FacePassModel.initModel(
+                            applicationContext.assets,
+                            "attr.age_gender.surveillance.nnie.av200.0.1.0.190630.bin"
+                        )
+                        config.occlusionFilterModel = FacePassModel.initModel(
+                            applicationContext.assets,
+                            "occlusion.all_attr_configurable.occ.190816.bin"
+                        )
+                        //如果不需要表情和年龄性别功能，smileModel和ageGenderModel可以为null
+                        config.smileModel = null
+                        config.ageGenderModel = null
+                        config.searchThreshold = 71f //未带口罩时，识别使用的阈值
+                        config.livenessThreshold = 60f
                         config.livenessEnabled = true
                         config.rgbIrLivenessEnabled = false
                         config.faceMinThreshold = 100
@@ -329,17 +414,15 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                         config.retryCount = 10
                         config.smileEnabled = false
                         config.maxFaceEnabled = true
+                        config.rotation = cameraRotation
                         config.fileRootPath =
                             getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)!!.absolutePath
                         /* 创建SDK实例 */
                         mFacePassHandler = FacePassHandler(config)
-                        val addFaceConfig: FacePassConfig = mFacePassHandler!!.getAddFaceConfig()
-                        addFaceConfig.poseThreshold.pitch = 20f
-                        addFaceConfig.poseThreshold.roll = 20f
-                        addFaceConfig.poseThreshold.yaw = 20f
-                        addFaceConfig.blurThreshold = 0.6f
+                        val addFaceConfig = mFacePassHandler!!.addFaceConfig
+                        addFaceConfig.blurThreshold = 0.8f
                         addFaceConfig.faceMinThreshold = 100
-                        mFacePassHandler!!.setAddFaceConfig(addFaceConfig)
+                        mFacePassHandler!!.addFaceConfig = addFaceConfig
                         checkGroup()
                     } catch (e: FacePassException) {
                         e.printStackTrace()
@@ -357,7 +440,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
      */
     fun checkGroup() {
         //绑定测试人脸
-        addBindTest()
+//        addBindTest()
         if (mFacePassHandler == null) {
             return
         }
@@ -419,7 +502,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     override fun onPictureTaken(cameraPreviewData: CameraPreviewData?) {
         mFeedFrameQueue!!.offer(cameraPreviewData)
-        Log.i(FenFenCommonUtil.FACE_TAG, "feedframe")
+//        Log.i(FenFenCommonUtil.FACE_TAG, "feedframe")
     }
 
     private fun initAndroidHandler() {
@@ -453,9 +536,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     inner class FeedFrameThread : Thread() {
         var isInterrupt = false
         override fun run() {
+
+            //  是否中断
             while (!isInterrupt) {
-                var cameraPreviewData: CameraPreviewData? = null
-                cameraPreviewData = try {
+                val cameraPreviewData: CameraPreviewData? = try {
                     mFeedFrameQueue!!.take()
                 } catch (e: InterruptedException) {
                     e.printStackTrace()
@@ -466,8 +550,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 }
                 /* 将相机预览帧转成SDK算法所需帧的格式 FacePassImage */
                 val startTime = System.currentTimeMillis() //起始时间
-                var image: FacePassImage
-                image = try {
+                var image: FacePassImage = try {
                     FacePassImage(
                         cameraPreviewData!!.nv21Data,
                         cameraPreviewData!!.width,
@@ -477,6 +560,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     )
                 } catch (e: FacePassException) {
                     e.printStackTrace()
+                    Log.e(MainActivity.MY_TAG, "人脸帧invalid失败")
                     continue
                 }
 
@@ -485,81 +569,56 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 try {
                     detectionResult = mFacePassHandler!!.feedFrame(image)
                 } catch (e: FacePassException) {
+                    Log.e(MainActivity.MY_TAG, "人脸脸框异常")
                     e.printStackTrace()
                 }
                 if (detectionResult == null || detectionResult.faceList.size == 0) {
                     /* 当前帧没有检出人脸 */
-                    runOnUiThread(Runnable {
-                        fcview!!.clear()
+                    runOnUiThread {
+                        fcview.clear()
                         fcview.invalidate()
-                    })
+                    }
                 } else {
                     /* 将识别到的人脸在预览界面中圈出，并在上方显示人脸位置及角度信息 */
                     val bufferFaceList = detectionResult.faceList
-                    runOnUiThread(Runnable { showFacePassFace(bufferFaceList) })
+//                    if(!fcview.isInCircle(faceList)){
+//                        break
+//                    }
+                    runOnUiThread { showFacePassFace(bufferFaceList) }
                 }
-                if (SDK_MODE == FacePassHandler.FacePassSDKMode.MODE_OFFLINE) {
+
+                //  如果是联机的状态，就传递 detectionResult 对象给服务器进行处理，返回的 FacePassRecognitionResult 对象带有 faceToken ，faceToken（人脸唯一id）
+                if (SDK_MODE == FacePassSDKMode.MODE_ONLINE) {
+
+                } else {
                     /*离线模式，将识别到人脸的，message不为空的result添加到处理队列中*/
                     if (detectionResult != null && detectionResult.message.size != 0) {
-                        Log.d(MainActivity.DEBUG_TAG, "mRecognizeDataQueue.offer")
-                        /*所有检测到的人脸框的属性信息*/for (i in detectionResult.faceList.indices) {
-                            Log.d(
-                                MainActivity.DEBUG_TAG, String.format(
-                                    "rc attribute faceList hairType: 0x%x beardType: 0x%x hatType: 0x%x respiratorType: 0x%x glassesType: 0x%x skinColorType: 0x%x",
-                                    detectionResult.faceList[i].rcAttr.hairType.ordinal,
-                                    detectionResult.faceList[i].rcAttr.beardType.ordinal,
-                                    detectionResult.faceList[i].rcAttr.hatType.ordinal,
-                                    detectionResult.faceList[i].rcAttr.respiratorType.ordinal,
-                                    detectionResult.faceList[i].rcAttr.glassesType.ordinal,
-                                    detectionResult.faceList[i].rcAttr.skinColorType.ordinal
-                                )
-                            )
-                        }
-                        Log.d(
-                            DEBUG_TAG,
-                            "--------------------------------------------------------------------------------------------------------------------------------------------------"
-                        )
-                        /*送识别的人脸框的属性信息*/
-                        val trackOpts =
-                            arrayOfNulls<FacePassTrackOptions>(detectionResult.images.size)
-                        for (i in detectionResult.images.indices) {
-                            if (detectionResult.images[i].rcAttr.respiratorType != FacePassRCAttribute.FacePassRespiratorType.INVALID
-                                && detectionResult.images[i].rcAttr.respiratorType != FacePassRCAttribute.FacePassRespiratorType.NO_RESPIRATOR
-                            ) {
-                                val searchThreshold = 60f
-                                val livenessThreshold =
-                                    -1.0f // -1.0f will not change the liveness threshold
-                                trackOpts[i] = FacePassTrackOptions(
-                                    detectionResult.images[i].trackId,
-                                    searchThreshold,
-                                    livenessThreshold
-                                )
+                        Log.d(DEBUG_TAG, "mDetectResultQueue.offer")
+                        //  FacePassRecognitionResult
+                        Log.i(MY_TAG, "触发离线识别")
+                        //  为空
+                        //  Log.i(MY_TAG,detectionResult.feedback[0].trackId+"");
+                        val facePassDetectionResult = detectionResult.feedback
+                        if (facePassDetectionResult != null && facePassDetectionResult.size != 0) {
+                            for (f in facePassDetectionResult) {
                             }
-                            Log.d(
-                                MainActivity.DEBUG_TAG, String.format(
-                                    "rc attribute in FacePassImage, hairType: 0x%x beardType: 0x%x hatType: 0x%x respiratorType: 0x%x glassesType: 0x%x skinColorType: 0x%x",
-                                    detectionResult.images[i].rcAttr.hairType.ordinal,
-                                    detectionResult.images[i].rcAttr.beardType.ordinal,
-                                    detectionResult.images[i].rcAttr.hatType.ordinal,
-                                    detectionResult.images[i].rcAttr.respiratorType.ordinal,
-                                    detectionResult.images[i].rcAttr.glassesType.ordinal,
-                                    detectionResult.images[i].rcAttr.skinColorType.ordinal
-                                )
+                        } else {
+                            Log.i(
+                                MY_TAG,
+                                "facePassDetectionResult == null && facePassDetectionResult.length == 0"
                             )
                         }
-                        val mRecData = RecognizeData(detectionResult.message, trackOpts)
-                        mRecognizeDataQueue!!.offer(mRecData)
+
+
+                        /*String faceToken = new String(detectionResult.message);
+                        Log.i(MY_TAG, "无线状态下 detectionResult.message " + faceToken);*/mDetectResultQueue!!.offer(
+                            detectionResult.message
+                        )
                     }
                 }
                 val endTime = System.currentTimeMillis() //结束时间
                 val runTime = endTime - startTime
-                for (i in detectionResult!!.faceList.indices) {
-                    Log.i(
-                        "DEBUG_TAG",
-                        "rect[" + i + "] = (" + detectionResult.faceList[i].rect.left + ", " + detectionResult.faceList[i].rect.top + ", " + detectionResult.faceList[i].rect.right + ", " + detectionResult.faceList[i].rect.bottom
-                    )
-                }
-                Log.i("]time", String.format("feedfream %d ms", runTime))
+
             }
         }
 
@@ -675,58 +734,83 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     inner class RecognizeThread : Thread() {
         var isInterrupt = false
         override fun run() {
-            while (!isInterrupt) {
+
+            while (canRecognize) {
                 try {
-                    val recognizeData: RecognizeData = mRecognizeDataQueue!!.take()
+                    val detectionResult = mDetectResultQueue!!.take()
+
+                    //  年龄性别结果。
                     val ageGenderResult: Array<FacePassAgeGenderResult>? = null
+                    Log.i(MY_TAG, "触发无线人脸识别处理线程")
+                    Log.d(DEBUG_TAG, "mDetectResultQueue.isLocalGroupExist")
+
+                    //  是否存在底库
                     if (isLocalGroupExist) {
-                        Log.d(DEBUG_TAG, "RecognizeData >>>>")
-                        val recognizeResultArray: Array<Array<FacePassRecognitionResult>> =
-                            mFacePassHandler!!.recognize(
-                                group_name,
-                                recognizeData.message,
-                                1,
-                                recognizeData.trackOpt
-                            )
-                        if (recognizeResultArray != null && recognizeResultArray.size > 0) {
-                            for (recognizeResult in recognizeResultArray) {
-                                if (recognizeResult != null && recognizeResult.size > 0) {
-                                    for (result in recognizeResult) {
-                                        val faceToken = String(result.faceToken)
-                                        if (FacePassRecognitionState.RECOGNITION_PASS == result.recognitionState) {
-                                            getFaceImageByFaceToken(result.trackId, faceToken)
-                                        }
-                                        val idx: Int = findidx(ageGenderResult, result.trackId)
-                                        if (idx == -1) {
-                                            showRecognizeResult(
-                                                result.trackId,
-                                                result.detail.searchScore,
-                                                result.detail.livenessScore,
-                                                !TextUtils.isEmpty(faceToken)
-                                            )
-                                        }
-                                        Log.d(
-                                            DEBUG_TAG, String.format(
-                                                "recognize trackid: %d, searchScore: %f  searchThreshold: %f, hairType: 0x%x beardType: 0x%x hatType: 0x%x respiratorType: 0x%x glassesType: 0x%x skinColorType: 0x%x",
-                                                result.trackId,
-                                                result.detail.searchScore,
-                                                result.detail.searchThreshold,
-                                                result.detail.rcAttr.hairType.ordinal,
-                                                result.detail.rcAttr.beardType.ordinal,
-                                                result.detail.rcAttr.hatType.ordinal,
-                                                result.detail.rcAttr.respiratorType.ordinal,
-                                                result.detail.rcAttr.glassesType.ordinal,
-                                                result.detail.rcAttr.skinColorType.ordinal
-                                            )
-                                        )
-                                    }
+                        Log.d(DEBUG_TAG, "mDetectResultQueue.recognize")
+                        Log.i(MY_TAG, "isLocalGroupExist 为 true ， 底库存在。")
+
+                        //  获取 返回识别结果（FacePassRecognitionResult）的数组，每一项对应一张图的识别结果。
+                        val recognizeResult =
+                            mFacePassHandler!!.recognize(group_name, detectionResult)
+
+
+                        //  判定返回识别结果是不是为空
+                        if (recognizeResult != null && recognizeResult.size > 0) {
+                            Log.i(MY_TAG, "人脸识别正常")
+                            for (result in recognizeResult) {
+                                val faceToken = String(result.faceToken)
+                                nowFaceToken = faceToken
+                                Log.i("addFaceImage", "faceToken 离线状态下的人脸识别$faceToken")
+
+
+                                //  查询faceToken 是否对应某一个从服务器传过来 userId，如果存在则直接进入垃圾箱控制台
+
+//                                if (FacePassRecognitionResultType.RECOG_OK == result.facePassRecognitionResultType) {
+                                getFaceImageByFaceToken(result.trackId, faceToken)
+                                //                                }
+                                val idx = findidx(ageGenderResult, result.trackId)
+                                //  -1就是没有找到的意思， 也就是 ageGenderResult (年龄性别结果) 为 null
+                                if (idx == -1) {
+
+                                    //  没有性别的 Toast
+                                    showRecognizeResult(
+                                        result.trackId,
+                                        result.detail.searchScore,
+                                        result.detail.livenessScore,
+                                        !TextUtils.isEmpty(faceToken),
+                                        0f,
+                                        0
+                                    )
+                                } else {
+                                    //  有性别的 Toast
+                                    showRecognizeResult(
+                                        result.trackId,
+                                        result.detail.searchScore,
+                                        result.detail.livenessScore,
+                                        !TextUtils.isEmpty(faceToken),
+                                        0f,
+                                        0
+                                    )
                                 }
                             }
+                        } else {
+                            //  底库中没有人脸,显示人脸验证失败，注册人脸
+                            Handler(Looper.getMainLooper()).post {
+                                //  showVerifyFail();
+                            }
+                            Log.i(
+                                MY_TAG,
+                                "人脸识别为空 recognizeResult != null && recognizeResult.length > 0) 为 false"
+                            )
                         }
+                    } else {
+                        Log.i(MY_TAG, "isLocalGroupExist 为 false ，底库不存在。")
                     }
                 } catch (e: InterruptedException) {
+                    Log.e(MY_TAG, "人脸getFaceImageByFaceToken异常，RecognizeThread.run")
                     e.printStackTrace()
                 } catch (e: FacePassException) {
+                    Log.e(MY_TAG, "人脸getFaceImageByFaceToken异常，RecognizeThread.run")
                     e.printStackTrace()
                 }
             }
@@ -777,7 +861,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             imageView.setImageBitmap(bitmap)
         }
         stateView.text = s
-        idTextView.text = text
+//        idTextView.text = text
         if (mRecoToast == null) {
             mRecoToast = Toast(applicationContext)
             mRecoToast!!.setGravity(Gravity.CENTER_VERTICAL, 0, 0)
@@ -805,20 +889,73 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         trackId: Long,
         searchScore: Float,
         livenessScore: Float,
-        isRecognizeOK: Boolean
+        isRecognizeOK: Boolean,
+        age: Float,
+        gender: Int
     ) {
         mAndroidHandler!!.post {
-            faceEndTextView.append(
-                """
-                ID = $trackId${if (isRecognizeOK) "识别成功" else "识别失败"}
+            if (searchScore < 64) {
+                //showToast("ID = " + String.valueOf(trackId), Toast.LENGTH_SHORT, false, null);    原先处理方式
+                Log.i(
+                    MY_TAG,
+                    "searchScore : " + searchScore + ",livenessScore : " + livenessScore + "验证不通过"
+                )
+                //  显示验证识别并录脸
+//                showQRCodeDialog()
+                //  showVerifyFail();
+            } else {
+                showToast("ID = $nowFaceToken", Toast.LENGTH_SHORT, true, null)
+                Log.i(
+                    MY_TAG,
+                    "searchScore : " + searchScore + ",livenessScore : " + livenessScore + "验证通过"
+                )
+                queryFaceToken(nowFaceToken)
+            }
 
-                """.trimIndent()
-            )
-            faceEndTextView.append("识别分 = $searchScore\n")
-            faceEndTextView.append("活体分 = $livenessScore\n")
+//            faceEndTextView.append(
+//                """
+//                        ID = $trackId${if (isRecognizeOK) "识别成功" else "识别失败"}
+//
+//                        """.trimIndent()
+//            )
+//            faceEndTextView.append("识别分 = $searchScore\n")
+//            faceEndTextView.append("活体分 = $livenessScore\n")
         }
     }
 
+    //  上一次人脸识别成功时间
+    private var lastPassTime: Long = 0
+    private var faceImagePath: String = ""
+    fun queryFaceToken(faceToken: String) {
+        //  避免重复进入 控制台界面，2s
+        if (System.currentTimeMillis() - lastPassTime < 2000) {
+            Log.i(MY_TAG, "重复进入")
+            return
+        }
+
+        val userMessage: UserMessage =
+            userMessageDao!!.queryBuilder().where(UserMessageDao.Properties.FaceToken.eq(faceToken))
+                .build().unique()
+        if (userMessage != null) {
+
+            DustbinBrainApp.userId = userMessage.userId.toInt()
+            DustbinBrainApp.userType = userMessage.userType
+            LogUtils.dTag(
+                "queryFaceToken",
+                "userMessage.userId${userMessage.userId},  userMessage.userType${userMessage.userType}"
+            )
+            LogUtils.dTag(
+                "queryFaceToken",
+                "userId${DustbinBrainApp.userId},  userType${DustbinBrainApp.userType}"
+            )
+            lastPassTime = System.currentTimeMillis()
+            faceImagePath = mFacePassHandler!!.getFaceImagePath(faceToken.toByteArray())
+            //  跳转到垃圾箱控制台
+            goControlActivity()
+        } else {
+            Log.i("addFaceImage", "找不到" + faceToken + "对应的用户")
+        }
+    }
 
     private var tcp_client_id //  服务器分配的连接 id
             : String? = null
@@ -831,20 +968,23 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     private var QRReturnTime // 上一次扫码二维码返回时间
             : Long = 0
     val TCP_DEBUG = "TCP调试"
-    fun initTCP() {
+    private fun initTCP() {
         TCPConnectUtil.getInstance().connect()
         TCPConnectUtil.getInstance().setListener(object : NettyClientListener<Any?> {
             override fun onMessageResponseClient(bytes: ByteArray, i: Int) {
                 //  来自服务器的响应
                 tcpResponse = String(bytes, StandardCharsets.UTF_8)
-
+                Log.i(
+                    TCP_DEBUG,
+                    "服务器推送内容长度：" + tcpResponse!!.length + "，TCP 当前状态：" + i + "tcpResponse$tcpResponse"
+                )
                 if (tcpResponse != null && tcpResponse!!.length == 9 && "error msg" == tcpResponse) {
                     return
                 }
-                Log.i(
-                    TCP_DEBUG,
-                    "服务器推送内容长度：" + tcpResponse!!.length + "，TCP 当前状态：" + i
-                )
+//                Log.i(
+//                    TCP_DEBUG,
+//                    "服务器推送内容长度：" + tcpResponse!!.length + "，TCP 当前状态：" + i
+//                )
                 //  这一步解决一个返回特征值分段问题    =====================================================
                 //  以扫码推送特征值开头
                 if (tcpResponse!!.startsWith("{\"type\":\"QrReturn\",") && !tcpResponse!!.endsWith("}")) {
@@ -883,21 +1023,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 ) {
                     tcpResponse = cache + tcpResponse
                 }
-                //  =======================================================================================
-
-                //  分段异常
-                /*if(tcpResponse.endsWith("\"megvii_android.util.Base64\"}}}") && tcpResponse.length() < 200){
-                    tcpResponse = cache + tcpResponse;
-                    */
-                /*mainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MainActivity.this,"出错了，请重新扫码二维码",Toast.LENGTH_LONG).show();
-                            showToast("出错了，请重新扫描二维码",Toast.LENGTH_LONG,false,null);
-                        }
-                    });*/
-                /*
-                }*/Log.i(
+                Log.i(
                     TCP_DEBUG,
                     "服务器推送过来的内容拼接结果：" + tcpResponse + ",长度:" + tcpResponse!!.length + "，状态:" + i
                 )
@@ -950,9 +1076,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             val vxLoginCall: VXLoginCall =
                                 gson.fromJson(data, VXLoginCall::class.java)
                             //  修改当前设置的用户id
-                            DustbinBrainApp.userId = vxLoginCall.getInfo().getUser_id()
+                            DustbinBrainApp.userId = vxLoginCall.info.user_id
                             //  修改当前用户类型
-                            DustbinBrainApp.userType = vxLoginCall.getInfo().getUser_type()
+                            DustbinBrainApp.userType = vxLoginCall.info.user_type.toLong()
                             //  隐藏二维码扫码
 
                             //  云端有该人的人脸特征，则将特征保存到本地
@@ -1026,8 +1152,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             //  回收桶二维码登录
                             val gQrReturnBean: GQrReturnBean =
                                 gson.fromJson(data, GQrReturnBean::class.java)
-                            DustbinBrainApp.userId = gQrReturnBean.getInfo().getUser_id()
-                            DustbinBrainApp.userType = gQrReturnBean.getInfo().getUser_type()
+                            DustbinBrainApp.userId = gQrReturnBean.info.user_id
+                            DustbinBrainApp.userType = gQrReturnBean.info.user_type.toLong()
                             goControlActivity()
                         } else if (type == "nfcActivity") {
                             val nfcActivityBean: NfcActivityBean =
@@ -1036,9 +1162,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             if (nfcActivityBean.getData().getCode() === 1) {
                                 //  设置用户id
                                 DustbinBrainApp.userId =
-                                    nfcActivityBean.getData().getInfo().getUser_id()
+                                    nfcActivityBean.getData().info.user_id
                                 DustbinBrainApp.userType =
-                                    nfcActivityBean.getData().getInfo().getUser_type()
+                                    nfcActivityBean.getData().info.user_type.toLong()
 
                                 //  跳转到垃圾箱控制台
                                 goControlActivity()
@@ -1097,13 +1223,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 .getDaoSession()!!.userMessageDao.updateInTx(userMessageList)
 //                            NetWorkUtil.getInstance().errorUpload("用户类型已全部修改为 0 ")
                             Log.i("updateAllUserType0", "修改之前")
-                        } else if (type == "reboot") {
-//                            AndroidDeviceSDK.reBoot(this@MainActivity)
+                        } else if (type == "connect_restartApp_msg") {
                         } else if ( /*type.equals("addFaceImage")*/false) {  //  添加人脸，人脸在服务器注册
                             Log.i("addFaceImage", "进入添加人脸")
                             val addFaceImageJsonObject = JsonParser.parseString(data).asJsonObject
                             val userId = addFaceImageJsonObject["userId"].asInt
-                            val userType = addFaceImageJsonObject["userType"].asInt
+                            val userType = addFaceImageJsonObject["userType"].asLong
                             val imageUrl = addFaceImageJsonObject["imageUrl"].asString
                             DustbinBrainApp.userId = userId
                             DustbinBrainApp.userType = userType
@@ -1143,16 +1268,64 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             }
 
             override fun onClientStatusConnectChanged(i: Int, i1: Int) {
-
+                runOnUiThread {
+                    if (i == ConnectState.STATUS_CONNECT_SUCCESS) {
+                        Log.e(TAG, "STATUS_CONNECT_SUCCESS:")
+                    } else {
+                        Log.e(TAG, "onServiceStatusConnectChanged:$i")
+                    }
+                }
             }
         })
     }
 
+    val TAG = "投递时间"
     fun goControlActivity() {
-
+        if (!canRecognize) {
+            return
+        }
+        if (binsWorkTimeBean == null) {
+            var map: MutableMap<String, String> = mutableMapOf(
+                "device_id" to deviceCode.toString()
+            )
+            viewModel!!.getBinsWorkTime(map)
+        }
+        LogUtils.dTag(
+            "goControlActivity",
+            "binsWorkTime${binsWorkTimeBean?.getData()?.am_start_time}"
+        )
+        DustbinBrainApp.hasManTime = System.currentTimeMillis()
+        //判断是否为特殊用户
+        if (DustbinBrainApp.userType.toInt() == 1) {
+            //  跳转到垃圾箱控制台
+            val intent = Intent(this@MainActivity, ControlActivity::class.java)
+//            val intent = Intent(this@MainActivity, SerialProtTestActivity::class.java)
+            intent.putExtra("userId", DustbinBrainApp.userId)
+            intent.putExtra("faceImage", faceImagePath)
+            startActivityForResult(intent, 300)
+        } else {
+            //  非特殊用户
+            if (BinsWorkTimeUntil.getBinsWorkTime(binsWorkTimeBean)) {
+                Log.i("MainActivity.TAG", "非特殊用户 投放时间")
+                //  是投放时间，跳转到垃圾箱控制台
+                val intent = Intent(
+                    this@MainActivity,
+                    ControlActivity::class.java
+//                    SerialProtTestActivity::class.java
+                )
+                intent.putExtra("userId", DustbinBrainApp.userId)
+                intent.putExtra("faceImage", faceImagePath)
+                startActivityForResult(intent, 300)
+            } else {
+                //  showToast("验证成功，但非投放时间", Toast.LENGTH_SHORT, false, null);
+                Toast.makeText(this@MainActivity, "非投放时间", Toast.LENGTH_LONG).show()
+                //  非投放时间
+                VoiceUtil.getInstance().openAssetMusics(this@MainActivity, "no_work_time.aac")
+            }
+        }
     }
 
-    private var nowFaceToken: String? = null
+    private var nowFaceToken: String = ""
 
     /**
      * 下载人脸图片
@@ -1194,7 +1367,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 //  本地实现
                                 DataBaseUtil.getInstance(this@MainActivity)
                                     .insertUserIdAndFaceTokenThread(userId, userType, nowFaceToken)
-                                val deviceId: String? = mmkv!!.decodeString("device_id")
+                                val deviceId: String? = mmkv!!.decodeString(MMKVCommon.DEVICE_ID)
                                 val hasMap: MutableMap<String, String> = mutableMapOf(
                                     "user_id" to userId.toString(),
                                     "device_id" to deviceId!!

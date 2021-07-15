@@ -29,12 +29,6 @@
             android:src="@mipmap/qr_login_regist" />
 
 
-        <TextView
-            android:id="@+id/faceEndTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:textSize="16sp" />
     </LinearLayout>
 
     <RelativeLayout
