@@ -28,10 +28,13 @@
             android:theme="@style/MaterialComponentsNoActionBar">
 
         </activity>
-        <!-- 适配小米（xiaomi）刘海屏 -->
         <activity android:name=".mvp.test.ChildActivity" />
         <activity android:name=".mvp.apk.view.InstallApkActivity"/>
         <activity android:name=".mvp.bind.view.BindDeviceActivity" android:theme="@style/MaterialComponentsNoActionBar"/>
+        <activity android:name=".mvp.main.view.PhoneLoginActivity" android:theme="@style/MaterialComponentsNoActionBar"/>
+        <activity android:name=".mvp.main.view.ControlActivity" android:theme="@style/MaterialComponentsNoActionBar"
+            android:launchMode="singleInstance"
+            />
         <activity android:name=".mvp.test.SerialProtTestActivity" android:theme="@style/MaterialComponentsNoActionBar"/>
         <activity android:name=".mvp.bind.view.DeviceMannageActivity"  android:theme="@style/MaterialComponentsNoActionBar">
             <intent-filter>
@@ -40,6 +43,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service android:name=".service.ResidentService"/>
 
         <meta-data
             android:name="android.notch_support"

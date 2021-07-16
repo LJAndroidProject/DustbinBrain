@@ -2,21 +2,101 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:gravity="center"
-    >
-    <Button
-        android:id="@+id/open_door"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/getdoor"
+        android:textSize="@dimen/sp_18"
+        android:layout_width="@dimen/dp_180"
+        android:layout_height="wrap_content"/>
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="开门"
-        android:onClick="sendDataPort"/>
-    <Button
-        android:id="@+id/close_door"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/open_door"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="开门" />
+
+        <Button
+            android:id="@+id/close_door"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="关门" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="关门"
-        android:onClick="sendDataPort"/>
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/open_paiqi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="排气开" />
+
+        <Button
+            android:id="@+id/close_paiqi"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="排气关" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/open_xiaodu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="消毒开" />
+
+        <Button
+            android:id="@+id/close_xiaodu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="消毒关" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/open_zhaoming"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="照明开" />
+
+        <Button
+            android:id="@+id/close_zhaoming"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="照明关" />
+    </LinearLayout>
+
+
 </LinearLayout>
