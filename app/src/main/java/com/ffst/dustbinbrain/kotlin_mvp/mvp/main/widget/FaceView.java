@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -11,10 +12,10 @@ import android.view.View;
 
 import androidx.core.content.ContextCompat;
 
-import com.blankj.utilcode.util.LogUtils;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import mcv.facepass.types.FacePassFace;
 
 
 /**
@@ -158,7 +159,40 @@ public class FaceView extends View {
     private void drawCycle(Canvas canvas) {
         int measuredHeight = getHeight();
         int measuredWidth = getWidth();
-        LogUtils.dTag("FaceView","measuredWidth:"+measuredWidth+",measuredHeight"+measuredHeight);
+//        LogUtils.dTag("FaceView","measuredWidth:"+measuredWidth+",measuredHeight"+measuredHeight);
         canvas.drawCircle(measuredWidth/2,measuredHeight/2, circleDimater /2, mCirclePaint);
+    }
+
+    // 关键点否在圆内
+    public boolean isInCircle(FacePassFace face, int headerExtra) {
+
+        // 近似 头顶两个坐标
+        PointF leftUpDot  = new PointF(face.rect.left,face.rect.top-headerExtra);
+        PointF rightUpDot  = new PointF(face.rect.right,face.rect.top - headerExtra);
+        PointF leftDownDot  = new PointF(face.rect.left,face.rect.bottom);
+        PointF rightDownDot = new PointF(face.rect.right,face.rect.bottom);
+        // 头顶不在圆内，并且y坐标超过了圆顶点, 则判定false
+        if(!pointIsInCircle(leftUpDot) && leftUpDot.y < (getHeight()/2 - circleDimater /2) ){
+            return false;
+        }
+        if(!pointIsInCircle(rightUpDot)&& rightUpDot.y < (getHeight()/2 - circleDimater /2)){
+            return false;
+        }
+        if(!pointIsInCircle(leftDownDot) && leftDownDot.y > (getHeight()/2 - circleDimater /2+circleDimater)){
+            return false;
+        }
+        if(!pointIsInCircle(rightDownDot)&& rightUpDot.y > (getHeight()/2 - circleDimater /2+circleDimater)){
+            return false;
+        }
+
+        return true;
+    }
+
+    PointF circleCenter;
+    // 点是否在圆内
+    private boolean pointIsInCircle(PointF pointF){
+        if(circleCenter == null)
+            circleCenter = new PointF(getWidth() / 2, getHeight() / 2);
+        return Math.pow((pointF.x - circleCenter.x), 2) + Math.pow((pointF.y - circleCenter.y), 2) <= Math.pow(circleDimater /2, 2);
     }
 }

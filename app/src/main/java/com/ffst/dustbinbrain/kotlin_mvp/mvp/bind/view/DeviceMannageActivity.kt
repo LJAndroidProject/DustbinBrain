@@ -11,6 +11,7 @@ import com.ffst.annotation.ClickGap
 import com.ffst.annotation.MethodLog
 import com.ffst.annotation.enums.LEVEL
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view.MainActivity
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.test.SerialProtTestActivity
 import com.ffst.utils.ext.startKtActivity
@@ -38,7 +39,7 @@ class DeviceMannageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mmkv = MMKV.defaultMMKV()
 
-        if(!TextUtils.isEmpty(mmkv?.decodeString("device_id"))){
+        if(!TextUtils.isEmpty(mmkv?.decodeString(MMKVCommon.DEVICE_ID))){
             startKtActivity<MainActivity>()
             finish()
         }

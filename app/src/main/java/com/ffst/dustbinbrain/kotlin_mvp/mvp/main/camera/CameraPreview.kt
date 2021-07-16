@@ -90,10 +90,6 @@ class CameraPreview : SurfaceView, SurfaceHolder.Callback {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val height = MeasureSpec.getSize(heightMeasureSpec)
-        LogUtils.dTag(
-            "FaceView",
-            "measuredWidth:" + measuredWidth + ", measuredHeight:" + measuredHeight + ", circleDimater:" + FaceView.circleDimater
-        )
         setMeasuredDimension((width * scaleW).toInt(), (height * scaleH).toInt())
     }
 

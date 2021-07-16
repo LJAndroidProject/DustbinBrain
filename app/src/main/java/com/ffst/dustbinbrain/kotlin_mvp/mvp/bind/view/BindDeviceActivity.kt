@@ -12,6 +12,7 @@ import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
 import com.ffst.dustbinbrain.kotlin_mvp.bean.GetDustbinConfig
+import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.bind.viewmodel.BindActivityViewModel
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view.MainActivity
 import com.ffst.dustbinbrain.kotlin_mvp.utils.DataBaseUtil
@@ -35,8 +36,8 @@ class BindDeviceActivity : BaseActivity() {
     override fun initViewData() {
         viewModel = ViewModelProvider(this)[BindActivityViewModel::class.java]
         mmkv = MMKV.defaultMMKV()
-        bind_device_id.editText?.setText(mmkv?.decodeString("device_id"))
-        bind_device_auth.editText?.setText(mmkv?.decodeString("mange_code"))
+        bind_device_id.editText?.setText(mmkv?.decodeString(MMKVCommon.DEVICE_ID))
+        bind_device_auth.editText?.setText(mmkv?.decodeString(MMKVCommon.MANGE_CODE))
         bindData()
     }
 
@@ -46,12 +47,13 @@ class BindDeviceActivity : BaseActivity() {
                 if (data.configData?.code === 1) {
                     val id = bind_device_id.editText?.text
                     val auth = bind_device_auth.editText?.text
-                    mmkv?.encode("device_id", id.toString())
-                    mmkv?.encode("mange_code", auth.toString())
+                    mmkv?.encode(MMKVCommon.DEVICE_ID, id.toString())
+                    mmkv?.encode(MMKVCommon.MANGE_CODE, auth.toString())
                     val getDustbinConfig: GetDustbinConfig = data.configData!!
                     val list: MutableList<DustbinStateBean> = ArrayList<DustbinStateBean>()
                     val listBeans: List<GetDustbinConfig.DataBean.ListBean> =
                         getDustbinConfig.data!!.list!!
+                    mmkv?.encode(MMKVCommon.IM_USERID, getDustbinConfig.id)
                     for (listBean in listBeans) {
 
                         //  垃圾箱id   服务器分配
