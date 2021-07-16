@@ -410,6 +410,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     fun adjustPhotoRotation(bm: Bitmap, orientationDegree: Int): Bitmap? {
         val m = Matrix()
+
+
         m.setRotate(orientationDegree.toFloat(), bm.width.toFloat() / 2, bm.height.toFloat() / 2)
         return Bitmap.createBitmap(bm, 0, 0, bm.width, bm.height, m, true)
     }
