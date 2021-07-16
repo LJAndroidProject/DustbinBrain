@@ -390,6 +390,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 }.start()
             }
             REQUEST_CODE_PHONE_LOGIN ->{
+                //摄像头占用\
+                manager?.release()
                 canRecognize = true
                 goControlActivity()
             }
@@ -398,6 +400,13 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             }
         }
     }
+
+
+
+
+
+
+
 
     fun adjustPhotoRotation(bm: Bitmap, orientationDegree: Int): Bitmap? {
         val m = Matrix()
