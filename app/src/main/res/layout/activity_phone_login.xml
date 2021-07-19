@@ -67,4 +67,23 @@
         android:insetBottom="@dimen/dp_0"
         android:onClick="bindCommit"
         app:backgroundTint="@color/ffst_btn" />
+    <com.google.android.material.button.MaterialButton
+
+        android:id="@+id/phone_back_btn"
+        android:layout_width="@dimen/x500"
+        android:layout_height="@dimen/y100"
+        android:layout_marginBottom="@dimen/y100"
+        android:layout_above="@id/main_dev_debug"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:text="退出"
+        android:layout_marginTop="@dimen/y100"
+        android:layout_gravity="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_20"
+        android:insetTop="@dimen/dp_0"
+        app:cornerRadius="@dimen/dp_10"
+        android:insetBottom="@dimen/dp_0"
+        android:onClick="bindCommit"
+        app:backgroundTint="@color/ffst_btn" />
 </LinearLayout>

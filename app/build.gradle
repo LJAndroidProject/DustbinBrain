@@ -18,12 +18,16 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         versionCode 34
-        versionName "1.0"
+        versionName "34.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             //设置支持的SO库架构
             abiFilters 'arm64-v8a', 'armeabi-v7a'
         }
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
     }
     buildTypes {
         release {
@@ -56,13 +60,14 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$coordinatorlayout_version"
     implementation "androidx.constraintlayout:constraintlayout:$constraintlayout_version"
     implementation "com.google.android.material:material:1.2.1"
-    api 'com.blankj:utilcodex:1.26.0'
+//    api 'com.blankj:utilcodex:1.26.0'
     implementation project(path: ':serialportlibrary')
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation project(path: ':mvp')
     kapt project(path: ':compiler')
+    implementation project(':trtccallingdemo')
 //    implementation "com.github.catch-pig.kotlin-mvp:mvp:$kotlin_mvp"
 //    kapt "com.github.catch-pig.kotlin-mvp:compiler:$kotlin_mvp"
     //刷新-头部
@@ -87,4 +92,6 @@ dependencies {
     implementation 'com.google.zxing:core:3.3.0'
     implementation 'org.greenrobot:eventbus:3.2.0'
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.30'
+
+    implementation files('libs/ZtlApi.jar')
 }

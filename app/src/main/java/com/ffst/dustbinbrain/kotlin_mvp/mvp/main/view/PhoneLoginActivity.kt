@@ -1,5 +1,6 @@
 package com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view
 
+import android.content.Intent
 import android.text.TextUtils
 import android.view.View
 import android.widget.Toast
@@ -21,7 +22,7 @@ import java.util.*
  * Created by LiuJW
  *on 2021/7/15
  */
-class PhoneLoginActivity :BaseActivity() {
+class PhoneLoginActivity : BaseActivity() {
     override fun layoutId(): Int {
         return R.layout.activity_phone_login
     }
@@ -53,7 +54,9 @@ class PhoneLoginActivity :BaseActivity() {
                                 DustbinBrainApp.userId = phoneLoginBean.data.user_id
                                 DustbinBrainApp.userType = phoneLoginBean.data.user_type.toLong()
                                 loadingView(false)
-                                setResult(MainActivity.REQUEST_CODE_PHONE_LOGIN)
+                                var intent = Intent()
+                                intent.putExtra("isSuccess",true)
+                                setResult(MainActivity.REQUEST_CODE_PHONE_LOGIN,intent)
                                 finish()
                             } else {
                                 ToastUtils.showShort("请先使用微信扫描二维码绑定手机号码")
@@ -61,13 +64,21 @@ class PhoneLoginActivity :BaseActivity() {
                         }
 
                         override fun fail(call: Call?, e: IOException) {
-                            Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT)
+                                .show()
                         }
 
                         override fun error(e: Exception) {
-                            Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT)
+                                .show()
                         }
                     })
+            }
+            R.id.phone_back_btn -> {
+                var intent = Intent()
+                intent.putExtra("isSuccess",false)
+                setResult(MainActivity.REQUEST_CODE_PHONE_LOGIN,intent)
+                finish()
             }
             else -> {
 

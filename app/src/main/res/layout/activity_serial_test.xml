@@ -98,5 +98,32 @@
             android:text="照明关" />
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
+        <Button
+            android:id="@+id/show_SystemBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="状态栏开" />
+
+        <Button
+            android:id="@+id/hide_SystemBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:onClick="sendDataPort"
+            android:text="状态栏关" />
+    </LinearLayout>
+    <Button
+        android:id="@+id/serial_test_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:onClick="sendDataPort"
+        android:text="返回"/>
 </LinearLayout>

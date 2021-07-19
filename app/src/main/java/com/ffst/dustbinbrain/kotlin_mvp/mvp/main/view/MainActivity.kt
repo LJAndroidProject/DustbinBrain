@@ -30,6 +30,7 @@ import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.*
 import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
@@ -45,13 +46,18 @@ import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.SettingVar
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.viewmodel.MainActivityViewModel
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.CicleViewOutlineProvider
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.FaceView
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.test.SerialProtTestActivity
+import com.ffst.dustbinbrain.kotlin_mvp.service.CallService
 import com.ffst.dustbinbrain.kotlin_mvp.service.ResidentService
 import com.ffst.dustbinbrain.kotlin_mvp.utils.*
 import com.ffst.mvp.base.activity.BaseActivity
+import com.ffst.utils.ext.startKtActivity
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
 import com.littlegreens.netty.client.status.ConnectState
+import com.tencent.liteav.login.model.ProfileManager
+import com.tencent.liteav.trtccalling.ui.videocall.TRTCVideoCallActivity
 import com.tencent.mmkv.MMKV
 import kotlinx.android.synthetic.main.activity_main.*
 import mcv.facepass.FacePassException
@@ -59,6 +65,7 @@ import mcv.facepass.FacePassHandler
 import mcv.facepass.types.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import org.greenrobot.eventbus.EventBus
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -76,8 +83,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         const val MY_TAG = "人脸识别调试"
         val group_name = FenFenCommonUtil.face_group_name
         val CONTROL_RESULT_CODE = 300
+
         //  相机
         val REQUEST_CODE_CAMERA = 500
+
         //登录
         val REQUEST_CODE_PHONE_LOGIN = 400
     }
@@ -160,6 +169,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     private var app: DustbinBrainApp? = null
 
+    private var mLastClickTime = 0.toLong()
+    private var mSecretNumber = 0
+
     override fun layoutId(): Int {
         return R.layout.activity_main
     }
@@ -172,6 +184,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         mDetectResultQueue = ArrayBlockingQueue(5)
         mFeedFrameQueue = ArrayBlockingQueue(1)
         deviceCode = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
+        AndroidDeviceSDK.autoStratAPP(this)
+        AndroidDeviceSDK.hideStatus(false)
+        AndroidDeviceSDK.checkForeground(this)
+        AndroidDeviceSDK.setSchedulePowerOn()
+        AndroidDeviceSDK.setSchedulePowerOff()
+//        CallService.start(this)
         initAndroidHandler()
         /* 初始化界面 */
         initView()
@@ -210,6 +228,16 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         mFeedFrameThread!!.start()
         //  开启读取数据服务，定时器
         startService(Intent(this, ResidentService::class.java))
+        ProfileManager.getInstance().login(
+            mmkv?.decodeString(MMKVCommon.IM_USERID),
+            "",
+            object : ProfileManager.ActionCallback {
+                override fun onSuccess() {
+                }
+
+                override fun onFailed(code: Int, msg: String?) {
+                }
+            })
     }
 
     private fun initView() {
@@ -261,11 +289,33 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         manager!!.setListener(this)
         show_login_qr.setImageBitmap(QRCodeUtil.getAppletLoginCode("https://ffadmin.fenfeneco.com/index.php/index/index/weixinRegister?device_id=" + deviceCode + "&device_type=2"));
         video_call_siv.setOnClickListener {
+            val callUserId = "123456789"
+            val selfInfo = TRTCVideoCallActivity.UserInfo()
+            selfInfo.userId = mmkv?.decodeString(MMKVCommon.IM_USERID)
+            val callUserInfoList: MutableList<TRTCVideoCallActivity.UserInfo> =
+                java.util.ArrayList()
+            val callUserInfo = TRTCVideoCallActivity.UserInfo()
+            callUserInfo.userId = callUserId
+            callUserInfoList.add(callUserInfo)
+
+            TRTCVideoCallActivity.startCallSomeone(this, selfInfo, callUserInfoList)
         }
         phone_login_siv.setOnClickListener {
             //  跳转到手机登录
             val intent = Intent(this@MainActivity, PhoneLoginActivity::class.java)
             startActivityForResult(intent, REQUEST_CODE_PHONE_LOGIN)
+        }
+        show_login_qr.setOnClickListener {
+            val curTime = System.currentTimeMillis()
+            val durTime = curTime - mLastClickTime
+            mLastClickTime = curTime
+            if (durTime < 600) {
+                ++mSecretNumber
+                if (mSecretNumber == 10) {
+                    mSecretNumber = 0
+                    startKtActivity<SerialProtTestActivity>()
+                }
+            }
         }
 
     }
@@ -292,7 +342,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 if (data != null) {
                     val exitCode = data.getIntExtra("exitCode", 0)
                     val facePath = data.getStringExtra("faceUri")
-                    if(TextUtils.isEmpty(facePath)){
+                    if (TextUtils.isEmpty(facePath)) {
                         DustbinBrainApp.userId = 0;
                         DustbinBrainApp.userType = 0;
                         //  结算超时
@@ -301,7 +351,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 closeAllDoor()
                             }
                         }
-                    }else{
+                    } else {
                         val TAG = "特征"
                         file = File(facePath)
                         //  获取位图对象
@@ -314,7 +364,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
                         try {
                             //  提取特征值
-                            val facePassExtractFeatureResult = mFacePassHandler!!.extractFeature(bitmap)
+                            val facePassExtractFeatureResult =
+                                mFacePassHandler!!.extractFeature(bitmap)
 
                             //  如果特征值合格
                             if (facePassExtractFeatureResult.result == 0) {
@@ -327,17 +378,27 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 )
                                 nowFaceToken = faceToken
                                 val bindResult =
-                                    mFacePassHandler!!.bindGroup(group_name, faceToken.toByteArray())
+                                    mFacePassHandler!!.bindGroup(
+                                        group_name,
+                                        faceToken.toByteArray()
+                                    )
 
                                 //  绑定结果
                                 if (bindResult) {
-                                    Log.i(TAG, "绑定成功faceToken:$faceToken"+"  , userId:${DustbinBrainApp.userId} , userType:${DustbinBrainApp.userType}")
+                                    Log.i(
+                                        TAG,
+                                        "绑定成功faceToken:$faceToken" + "  , userId:${DustbinBrainApp.userId} , userType:${DustbinBrainApp.userType}"
+                                    )
 
                                     //  将该facetoken 和用户id进行绑定
                                     val userMessage: UserMessage? =
                                         DataBaseUtil.getInstance(this@MainActivity)
                                             .daoSession?.userMessageDao?.queryBuilder()
-                                            ?.where(UserMessageDao.Properties.UserId.eq(DustbinBrainApp.userId!!))
+                                            ?.where(
+                                                UserMessageDao.Properties.UserId.eq(
+                                                    DustbinBrainApp.userId!!
+                                                )
+                                            )
                                             ?.unique()
                                     //  本地已经有这个人脸特征了，则删除掉原有的人脸特征，添加新的人脸特征
                                     if (userMessage != null) {
@@ -348,11 +409,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                         //  本地数据库中删除这个用户
                                         DataBaseUtil.getInstance(this@MainActivity)
                                             .daoSession?.userMessageDao?.delete(userMessage)
-                                        Log.i("addFaceImage", "删除旧的人脸特征与注册信息" + userMessage.getUserId())
+                                        Log.i(
+                                            "addFaceImage",
+                                            "删除旧的人脸特征与注册信息" + userMessage.getUserId()
+                                        )
                                     }
                                     //  本地实现
                                     DataBaseUtil.getInstance(this@MainActivity)
-                                        .insertUserIdAndFaceTokenThread(DustbinBrainApp.userId!!.toLong(), DustbinBrainApp.userType, nowFaceToken)
+                                        .insertUserIdAndFaceTokenThread(
+                                            DustbinBrainApp.userId!!.toLong(),
+                                            DustbinBrainApp.userType,
+                                            nowFaceToken
+                                        )
                                     //  上传人脸图片,特征值，以及用户id
                                     uploadFace(
                                         file!!,
@@ -369,7 +437,11 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                         } catch (e: java.lang.Exception) {
                             //  本地实现
                             DataBaseUtil.getInstance(this@MainActivity)
-                                .insertUserIdAndFaceTokenThread(DustbinBrainApp.userId!!.toLong(), DustbinBrainApp.userType!!, nowFaceToken)
+                                .insertUserIdAndFaceTokenThread(
+                                    DustbinBrainApp.userId!!.toLong(),
+                                    DustbinBrainApp.userType!!,
+                                    nowFaceToken
+                                )
                             Log.i(TAG, e.message!!)
                         } finally {
                             //  删除图片
@@ -389,9 +461,14 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     }
                 }.start()
             }
-            REQUEST_CODE_PHONE_LOGIN ->{
+            REQUEST_CODE_PHONE_LOGIN -> {
+                manager?.release()
                 canRecognize = true
-                goControlActivity()
+                if (data != null) {
+                    if (data.getBooleanExtra("isSuccess", false)) {
+                        goControlActivity()
+                    }
+                }
             }
             else -> {
 
@@ -488,7 +565,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
                                     //  本地实现
                                     DataBaseUtil.getInstance(this@MainActivity)
-                                        .insertUserIdAndFaceToken(DustbinBrainApp.userId!!.toLong(), nowFaceToken)
+                                        .insertUserIdAndFaceToken(
+                                            DustbinBrainApp.userId!!.toLong(),
+                                            nowFaceToken
+                                        )
                                     Log.i(
                                         TAG,
                                         DustbinBrainApp.userId.toString() + "绑定 " + nowFaceToken
@@ -1173,6 +1253,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         }
     }
 
+
     private var tcp_client_id //  服务器分配的连接 id
             : String? = null
     private var cache //  字符串缓存，当从服务器传输过来的内容太多可能会被分段发送，所以这里用一个缓存字符串拼接原本 分段的内容
@@ -1440,6 +1521,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 //                            NetWorkUtil.getInstance().errorUpload("用户类型已全部修改为 0 ")
                             Log.i("updateAllUserType0", "修改之前")
                         } else if (type == "connect_restartApp_msg") {
+                            var url =
+                                "https://ffadmin.fenfeneco.com/uploads/20210630/74a1162af848ccf6ee362dd16454ff18.apk"
                             val packageManager: PackageManager = packageManager
                             val intent =
                                 packageManager.getLaunchIntentForPackage(getPackageName())
@@ -1448,9 +1531,11 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 startActivity(intent)
                                 Process.killProcess(Process.myPid())
                             }
-                        }else if(type=="updateApp1to1"){
-                            if(!TextUtils.isEmpty(data)){
+                        } else if (type == "updateApp1to1") {
+                            if (!TextUtils.isEmpty(data)) {
                                 //执行更新操作
+                                LogUtils.e("更新地址:$data")
+                                EventBus.getDefault().post(data)
                             }
                         } else if ( /*type.equals("addFaceImage")*/false) {  //  添加人脸，人脸在服务器注册
                             Log.i("addFaceImage", "进入添加人脸")
@@ -1557,7 +1642,6 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
      * 验证失败,显示添加人脸弹窗
      */
     private var alertDialog: AlertDialog? = null
-
 
 
     //  H5 唤起相机 拍照回调此路径

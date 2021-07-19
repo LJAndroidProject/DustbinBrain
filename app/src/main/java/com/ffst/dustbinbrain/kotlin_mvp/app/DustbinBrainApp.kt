@@ -1,17 +1,15 @@
 package com.ffst.dustbinbrain.kotlin_mvp.app
 
+import ZtlApi.ZtlManager
 import android.app.Application
 import android.content.Context
 import android.util.Log
 import com.blankj.utilcode.util.LogUtils
 import com.ffst.dustbinbrain.kotlin_mvp.R
-import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig
-import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
-import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
-import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
+import com.tencent.liteav.login.model.ProfileManager
 import com.tencent.mmkv.MMKV
 
 /**
@@ -95,7 +93,9 @@ class DustbinBrainApp : Application() {
         LogUtils.dTag(TAG, getFilesDir().getAbsolutePath() + "/fenfen/mmkv")
 
         MMKV.initialize(this, getFilesDir().getAbsolutePath() + "/fenfen/mmkv");
-
+        //定昌设备初始化
+        ZtlManager.GetInstance().setContext(applicationContext)
+        ProfileManager.getInstance().initContext(this)
         SerialPortUtil.getInstance().receiveListener {
             SerialProManager.getInstance().inOrderString(applicationContext, it)
         }

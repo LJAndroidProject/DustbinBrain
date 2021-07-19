@@ -1,18 +1,24 @@
 package com.ffst.dustbinbrain.kotlin_mvp.service
 
+import ZtlApi.ZtlManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.*
+import android.text.TextUtils
 import android.util.Log
 import androidx.core.content.FileProvider
 import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DustBinRecordRequestParams
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateUploadBean
 import com.ffst.dustbinbrain.kotlin_mvp.bean.StateCallBean
 import com.ffst.dustbinbrain.kotlin_mvp.constants.MMKVCommon
+import com.ffst.dustbinbrain.kotlin_mvp.facepass.NetWorkUtil
+import com.ffst.dustbinbrain.kotlin_mvp.facepass.ServerAddress
 import com.ffst.dustbinbrain.kotlin_mvp.manager.NetApiManager
 import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
 import com.ffst.dustbinbrain.kotlin_mvp.network.api.ResponseListener
@@ -21,9 +27,12 @@ import com.ffst.dustbinbrain.kotlin_mvp.utils.FenFenCommonUtil
 import com.ffst.dustbinbrain.kotlin_mvp.utils.TCPConnectUtil
 import com.google.gson.Gson
 import com.tencent.mmkv.MMKV
+import okhttp3.Call
+import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.io.File
+import java.io.IOException
 import java.util.*
 
 /**
@@ -50,14 +59,14 @@ class ResidentService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         LogUtils.dTag(TAG, "服务销毁")
-//        EventBus.getDefault().unregister(this)
+        EventBus.getDefault().unregister(this)
     }
 
     override fun onCreate() {
         super.onCreate()
 
         LogUtils.dTag(TAG, "服务创建")
-//        EventBus.getDefault().register(this)
+        EventBus.getDefault().register(this)
         //  设备状态上报服务器
         val timerTask: TimerTask = object : TimerTask() {
             override fun run() {
@@ -140,10 +149,33 @@ class ResidentService : Service() {
     }
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
-    fun uploadDustBinRecord(params: String?){
+    fun uploadDustBinRecord(params: DustBinRecordRequestParams?){
+        LogUtils.d(TAG, "EventBus收到map：" + params!!.getRequestMap())
+        NetWorkUtil.getInstance().doPost(
+            ServerAddress.DUSTBIN_RECORD,
+            params.getRequestMap(),
+            object : NetWorkUtil.NetWorkListener {
+                override fun success(response: String) {
+                    LogUtils.d(TAG, "投递记录成功上传服务器: $response")
+                }
 
+                override fun fail(call: Call?, e: IOException) {
+                    LogUtils.d("投递失败 " + e.message)
+                }
+
+                override fun error(e: java.lang.Exception) {
+                    LogUtils.d("投递失败 " + e.message)
+                }
+            })
     }
 
+    @Subscribe(threadMode = ThreadMode.ASYNC)
+    fun uploadDustBinRecord(data:String){
+        LogUtils.d(TAG, "EventBus收到data：" + data)
+        if(!TextUtils.isEmpty(data)){
+            download(data)
+        }
+    }
     /**
      * 监听下载任务
      */
@@ -164,6 +196,8 @@ class ResidentService : Service() {
                     )
                     if (file != null) {
                         installApk(file)
+                        ToastUtils.showShort("开始远程更新APP")
+//                        ZtlManager.GetInstance().installAppAndStartUp(file.absolutePath, this@ResidentService.packageName);
                     }
                 }
 
