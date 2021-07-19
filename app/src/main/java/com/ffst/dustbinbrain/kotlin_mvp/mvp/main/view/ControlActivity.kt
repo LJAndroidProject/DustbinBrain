@@ -2,28 +2,33 @@ package com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view
 
 import android.app.ProgressDialog
 import android.content.Intent
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.net.Uri
+import android.os.*
+import android.provider.MediaStore
 import android.text.TextUtils
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.adapter.DustbinControlItemAdapter
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DustBinRecordRequestParams
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinENUM
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
 import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
 import com.ffst.dustbinbrain.kotlin_mvp.utils.DataBaseUtil
 import com.ffst.dustbinbrain.kotlin_mvp.utils.DustbinUtil
+import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.ffst.dustbinbrain.kotlin_mvp.utils.VoiceUtil
 import com.ffst.mvp.base.activity.BaseActivity
 import kotlinx.android.synthetic.main.activity_control.*
+import org.greenrobot.eventbus.EventBus
+import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -33,6 +38,7 @@ import kotlin.collections.ArrayList
  */
 class ControlActivity : BaseActivity() {
 
+    private var beforeDustbinStateBeans: List<DustbinStateBean>? = null
     private val handler: Handler = Handler(Looper.getMainLooper())
     private var dustbinControlItemAdapter: DustbinControlItemAdapter? = null
 
@@ -51,6 +57,7 @@ class ControlActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         //关闭紫外线（后期由主板控制）
 //        SerialProManager.getInstance().closeTheDisinfection(1)
+        beforeDustbinStateBeans = DustbinBrainApp.dustbinBeanList
         //开门后关闭所有紫外线灯
         for (dustbin in DustbinBrainApp.dustbinBeanList!!) {
             SerialProManager.getInstance().closeTheDisinfection(dustbin.doorNumber)
@@ -84,6 +91,8 @@ class ControlActivity : BaseActivity() {
                     Toast.makeText(this@ControlActivity, "没有合适的垃圾箱", Toast.LENGTH_SHORT).show()
                     return@setOnItemChildClickListener
                 }
+                //开门关闭消毒，开启照明
+                SerialProManager.getInstance().closeTheDisinfection(dustbinStateBean.doorNumber)
                 SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
                 addNeedCloseDustbin(dustbinStateBean)
                 SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
@@ -166,12 +175,31 @@ class ControlActivity : BaseActivity() {
     private var beginExitTime: Long = 0
     private var timerTask: TimerTask? = null
     private var timer: Timer? = null
-
+    var mUri: Uri? = null
+    var facePath:String?=null
     fun onControl(view: View) {
         val viewId = view.id
         when (viewId) {
             R.id.resgit_face_btn -> {
                 //人脸注册
+                //  步骤一：创建存储照片的文件
+                val path = Environment.getExternalStorageDirectory().toString()
+                val file = File(path, System.currentTimeMillis().toString() + ".jpg")
+                if (!file.parentFile.exists()) file.parentFile.mkdirs()
+                mUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    //  步骤二：Android 7.0及以上获取文件 Uri
+                    FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                } else {
+                    //  步骤三：获取文件Uri
+                    Uri.fromFile(file)
+                }
+                facePath = file.path
+                //  步骤四：调取系统拍照
+                val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, mUri)
+                startActivityForResult(intent, MainActivity.REQUEST_CODE_CAMERA)
+//                closeAllDoor()
+//                finish()
             }
             R.id.control_exit_btn -> {
                 //退出控制
@@ -220,6 +248,61 @@ class ControlActivity : BaseActivity() {
             }
         }
 
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            MainActivity.REQUEST_CODE_CAMERA -> {
+                LogUtils.e("注册返回")
+                closeAllDoor()
+                Handler(Looper.getMainLooper()).post {
+                    if (exitProgressDialog != null) {
+                        exitProgressDialog!!.dismiss()
+                    }
+                }
+                //startActivity(new Intent(ControlActivity.this,MainActivity.class));
+                val intent = Intent(this@ControlActivity, MainActivity::class.java)
+                intent.putExtra("faceUri", facePath)
+                setResult(300, intent)
+                finish()
+            }
+            else -> {
+
+            }
+        }
+    }
+
+    //  关闭所有门
+    private fun closeAllDoor() {
+        //  启动APP就关闭所有门
+        object : Thread() {
+            override fun run() {
+                super.run()
+                for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+                    SerialPortUtil.getInstance().sendData(
+                        SerialProManager.getInstance()
+                            .closeDoor(dustbinStateBean.doorNumber)
+                    )
+                    try {
+                        sleep(250)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+
+                    //  开排气扇
+                    SerialPortUtil.getInstance().sendData(
+                        SerialProManager.getInstance()
+                            .openExhaustFan(dustbinStateBean.doorNumber)
+                    )
+                    try {
+                        sleep(250)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }.start()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
@@ -477,32 +560,57 @@ class ControlActivity : BaseActivity() {
         finish()
     }
 
+    /**
+     * 获取投递之前的某个垃圾桶参数
+     */
+    private fun getBeforeDustbin(doorNumber: Int): DustbinStateBean? {
+        for (dustbinStateBean in beforeDustbinStateBeans!!) {
+            if (dustbinStateBean.doorNumber == doorNumber) {
+                return dustbinStateBean
+            }
+        }
+        return null
+    }
+
     fun addRecord(dustbinStateBean: DustbinStateBean, time: Long) {
-          /*user_id	是	int	用户ID
-          device_id	是	string	设备ID
-          bin_id	是	int	垃圾箱ID
-          bin_type	是	string	垃圾箱分类 ABCDEF
-          post_weight	否	float	投放重量
-          former_weight	否	float	原来的重量
-          now_weight	否	float	现在的重量
-          plastic_bottle_num	否	int	瓶子的个数
-          rubbish_image	否	string	垃圾图片
-          timestamp	否	string	当前时间戳*/
-        val map = mutableMapOf<String,String>()
-        map.put("userId",userId!!)
-        map.put("bin_id",userId!!)
-        map.put("bin_type",userId!!)
-        map.put("post_weight",userId!!)
-        map.put("former_weight",userId!!)
-        map.put("now_weight",userId!!)
-        map.put("plastic_bottle_num",userId!!)
-        map.put("err_code",userId!!)
-        map.put("err_msg",userId!!)
-        map.put("time",userId!!)
-        map.put("rubbish_image"," ")
-        if(!TextUtils.isEmpty(facePassImage)){
+
+        //  重量差
+        var diff = 0.0
+
+        //  获取垃圾箱之前的状态
+        val beforeDustbin: DustbinStateBean? = getBeforeDustbin(dustbinStateBean.doorNumber)
+        if (beforeDustbin != null) {
+            diff = dustbinStateBean.dustbinWeight - beforeDustbin.dustbinWeight
+        }
+        /*user_id	是	int	用户ID
+        device_id	是	string	设备ID
+        bin_id	是	int	垃圾箱ID
+        bin_type	是	string	垃圾箱分类 ABCDEF
+        post_weight	否	float	投放重量
+        former_weight	否	float	原来的重量
+        now_weight	否	float	现在的重量
+        plastic_bottle_num	否	int	瓶子的个数
+        rubbish_image	否	string	垃圾图片
+        timestamp	否	string	当前时间戳*/
+        val map = mutableMapOf<String, String>()
+        map.put("user_id", DustbinBrainApp.userId.toString())
+        map.put("bin_id", dustbinStateBean.id.toString())
+        map.put("bin_type", dustbinStateBean.dustbinBoxNumber)
+        map.put("post_weight", diff.toString())
+        map.put("former_weight", (dustbinStateBean.dustbinWeight-diff).toString())
+        map.put("now_weight", dustbinStateBean.dustbinWeight.toString())
+        map.put("plastic_bottle_num", "0")
+        map["err_code"] = if (dustbinStateBean.closeFailNumber == 0) "0" else "1" ////  0是正常的，其它是不正常的 1、2、3 对应一个err_msg
+        map["err_msg"] =
+            if (dustbinStateBean.closeFailNumber == 0) "无描述" else "关门失败，结算异常" //    异常描述
+
+        map["time"] = time.toString()
+        map.put("rubbish_image", " ")
+        if (!TextUtils.isEmpty(facePassImage)) {
             map.put("user_pictrue", facePassImage!!)
         }
-
+        val recordRequestParams = DustBinRecordRequestParams()
+        recordRequestParams.setRequestMap(map)
+        EventBus.getDefault().post(recordRequestParams)
     }
 }

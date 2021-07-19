@@ -23,7 +23,7 @@ class TCPConnectUtil {
             mNettyTcpClient ?: Builder()
                 .setHost(tcpIp)//设置服务端地址
                 .setTcpPort(port) //设置服务端端口号
-                .setMaxReconnectTimes(5)//设置最大重连次数 -1时无限重连
+                .setMaxReconnectTimes(-1)//设置最大重连次数 -1时无限重连
                 .setReconnectIntervalTime(5)//设置重连间隔时间。单位 秒
                 .setSendheartBeat(true)//设置是否发送心跳
                 .setHeartBeatInterval(5)//设置心跳间隔时间。单位：秒
@@ -58,6 +58,7 @@ class TCPConnectUtil {
 
 
     fun sendData(b: String): Boolean {
+        LogUtils.i("tcp发送：$b")
         return mNettyTcpClient!!.sendMsgToServer(b.toByteArray())
     }
 }
