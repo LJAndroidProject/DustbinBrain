@@ -17,8 +17,8 @@ android {
         applicationId "com.ffst.dustbinbrain"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 34
-        versionName "34.3"
+        versionCode 35
+        versionName "35.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             //设置支持的SO库架构

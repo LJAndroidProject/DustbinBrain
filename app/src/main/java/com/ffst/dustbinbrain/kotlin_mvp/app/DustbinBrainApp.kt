@@ -6,6 +6,10 @@ import android.content.Context
 import android.util.Log
 import com.blankj.utilcode.util.LogUtils
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
+import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
+import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
@@ -72,7 +76,7 @@ class DustbinBrainApp : Application() {
                         )
 
                         //  关闭本身的紫外线灯
-                        SerialProManager.getInstance().openTheDisinfection(dustbinStateBean.doorNumber)
+                        SerialProManager.getInstance().closeTheDisinfection(dustbinStateBean.doorNumber)
                         //  是否为 奇数
                         val isOddNumber = dustbinStateBean.doorNumber % 2 !== 0
                         //  奇数 + 1，偶数 -1

@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.TimeUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.adapter.DustbinControlItemAdapter
@@ -308,6 +309,7 @@ class ControlActivity : BaseActivity() {
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
         hasManIsRun = true
+        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
         return super.dispatchTouchEvent(ev)
     }
 
@@ -315,6 +317,7 @@ class ControlActivity : BaseActivity() {
         super.onRestart()
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
         hasManIsRun = true
+        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
     }
 
     override fun onStop() {

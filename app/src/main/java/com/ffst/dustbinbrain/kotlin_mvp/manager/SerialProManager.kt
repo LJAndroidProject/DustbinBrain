@@ -2,6 +2,8 @@ package com.ffst.dustbinbrain.kotlin_mvp.manager
 
 import android.content.Context
 import android.util.Log
+import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.TimeUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
@@ -128,9 +130,10 @@ class SerialProManager : ImlSerialPortRequest.ByteHEX {
                 //  人工锁
                 dustbinStateBean.artificialDoorLock = chars[7] == '1'
                 Log.i(DustbinBrainApp.TAG, "状态解析" + dustbinStateBean.toChineseString())
-                if(dustbinStateBean.proximitySwitch){
+                if(!dustbinStateBean.proximitySwitch){
                     //垃圾箱接近感应红外异常可能导致一直无法自动结算
                     DustbinBrainApp.hasManTime = System.currentTimeMillis();
+                    LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
                 }
                 DustbinBrainApp.setDustbinState(context,dustbinStateBean)
             } else if (orderMessage.order?.get(0) == OrderUtil.WEIGHING_BYTE) {

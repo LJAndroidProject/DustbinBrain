@@ -11,7 +11,8 @@ class AndroidDeviceSDK {
         fun checkForeground(context:Context){
             pkgName = context.getPackageName()
             //pkgName：需要保持置顶的APP
-            ZtlManager.GetInstance().keepActivity(pkgName)
+//            ZtlManager.GetInstance().keepActivity(pkgName)
+            ZtlManager.GetInstance().unKeepActivity()
         }
 
         //设置开机自启动
@@ -41,7 +42,7 @@ class AndroidDeviceSDK {
          */
         fun setSchedulePowerOn(){
             //设置 Android 设备 17：00 每天定时开机
-            ZtlManager.GetInstance().setSchedulePowerOn(11,36,true);
+            ZtlManager.GetInstance().setSchedulePowerOn(10,52,true);
         }
 
         //定时关机
@@ -51,7 +52,7 @@ class AndroidDeviceSDK {
          */
         fun setSchedulePowerOff(){
             //设置 Android 设备 9：30 每天定时关机
-            ZtlManager.GetInstance().setSchedulePowerOff(11,34,true);
+            ZtlManager.GetInstance().setSchedulePowerOff(10,50,true);
         }
 
         //无需root权限静默安装APK

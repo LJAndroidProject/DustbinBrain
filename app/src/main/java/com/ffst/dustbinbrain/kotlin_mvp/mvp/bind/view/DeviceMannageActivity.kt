@@ -38,8 +38,9 @@ class DeviceMannageActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mmkv = MMKV.defaultMMKV()
-
-        if(!TextUtils.isEmpty(mmkv?.decodeString(MMKVCommon.DEVICE_ID))){
+        var isDebug = false
+        isDebug = intent.getBooleanExtra("isDebug",false)
+        if(!TextUtils.isEmpty(mmkv?.decodeString(MMKVCommon.DEVICE_ID)) && !isDebug){
             startKtActivity<MainActivity>()
             finish()
         }

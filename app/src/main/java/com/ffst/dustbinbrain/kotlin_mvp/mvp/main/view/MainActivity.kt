@@ -28,6 +28,7 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
+import com.blankj.utilcode.util.TimeUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
@@ -40,6 +41,7 @@ import com.ffst.dustbinbrain.kotlin_mvp.facepass.ResultMould
 import com.ffst.dustbinbrain.kotlin_mvp.facepass.ServerAddress
 import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
 import com.ffst.dustbinbrain.kotlin_mvp.manager.ThreadManager
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.bind.view.DeviceMannageActivity
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraManager
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraPreviewData
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.SettingVar
@@ -189,7 +191,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         AndroidDeviceSDK.checkForeground(this)
         AndroidDeviceSDK.setSchedulePowerOn()
         AndroidDeviceSDK.setSchedulePowerOff()
-//        CallService.start(this)
+        CallService.start(this)
         initAndroidHandler()
         /* 初始化界面 */
         initView()
@@ -313,7 +315,10 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 ++mSecretNumber
                 if (mSecretNumber == 10) {
                     mSecretNumber = 0
-                    startKtActivity<SerialProtTestActivity>()
+//                    startKtActivity<DeviceMannageActivity>()
+                    val intent = Intent(this@MainActivity, DeviceMannageActivity::class.java)
+                    intent.putExtra("isDebug", true)
+                    startActivity(intent)
                 }
             }
         }
@@ -1608,12 +1613,13 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             "binsWorkTime${binsWorkTimeBean?.getData()?.am_start_time}"
         )
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
+        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
         //判断是否为特殊用户
         if (DustbinBrainApp.userType.toInt() == 1) {
             //  跳转到垃圾箱控制台
             val intent = Intent(this@MainActivity, ControlActivity::class.java)
 //            val intent = Intent(this@MainActivity, SerialProtTestActivity::class.java)
-            intent.putExtra("userId", DustbinBrainApp.userId)
+            intent.putExtra("userId", ""+DustbinBrainApp.userId)
             intent.putExtra("faceImage", faceImagePath)
             startActivityForResult(intent, 300)
         } else {
@@ -1626,7 +1632,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     ControlActivity::class.java
 //                    SerialProtTestActivity::class.java
                 )
-                intent.putExtra("userId", DustbinBrainApp.userId)
+                intent.putExtra("userId", ""+DustbinBrainApp.userId)
                 intent.putExtra("faceImage", faceImagePath)
                 startActivityForResult(intent, 300)
             } else {
