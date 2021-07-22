@@ -115,55 +115,94 @@ class ControlActivity : BaseActivity() {
         /*
          * 开其它
          * */
-        for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
-            if (dustbinStateBean.dustbinBoxType.equals(DustbinENUM.OTHER.toString())) {
-
-                //  为什么不为 0 呢 ，0 号桶位置作废
-                if (!dustbinStateBean.isFull && dustbinStateBean.doorNumber !== 0) {
-                    //  添加需要关闭的垃圾箱
-                    addNeedCloseDustbin(dustbinStateBean)
-
-                    //  开灯
-                    SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
-                    //开门
-                    SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
-                    break
-                } else {
-                    Toast.makeText(
-                        this,
-                        dustbinStateBean.dustbinBoxType.toString() + "垃圾箱已满",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+        var otherIsFull = true //是否全部已满，全部已满为true
+        DustbinBrainApp.dustbinBeanList?.let { list ->
+            list.find { it.dustbinBoxType.equals(DustbinENUM.OTHER.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
+                addNeedCloseDustbin(model)
+                otherIsFull = false
+                //  开灯
+                SerialProManager.getInstance().openLight(model.doorNumber)
+                //开门
+                SerialProManager.getInstance().openDoor(model.doorNumber)
+            }?:let {
+                Toast.makeText(
+                    this,
+                    "其他垃圾" + "垃圾箱已满",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+
+
+//        for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+//            if (dustbinStateBean.dustbinBoxType.equals(DustbinENUM.OTHER.toString())) {
+//
+//                //  为什么不为 0 呢 ，0 号桶位置作废
+//                if (dustbinStateBean.isFull && dustbinStateBean.doorNumber != 0) {
+//                    //  添加需要关闭的垃圾箱
+//                    addNeedCloseDustbin(dustbinStateBean)
+//                    otherIsFull = false
+//                    //  开灯
+//                    SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+//                    //开门
+//                    SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
+//                    break
+//                }
+//            }
+//        }
+//        if (otherIsFull) {
+//            Toast.makeText(
+//                this,
+//                (DustbinENUM.OTHER.toString()) + "垃圾箱已满",
+//                Toast.LENGTH_SHORT
+//            ).show()
+//        }
 
         /*
          *
          * 开餐厨
          * */
-        for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
-            if (dustbinStateBean.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString())) {
-
-                //  为什么不为 0 呢 ，0 号桶位置作废
-                if (!dustbinStateBean.isFull && dustbinStateBean.doorNumber !== 0) {
-                    //  添加需要关闭的垃圾箱
-                    addNeedCloseDustbin(dustbinStateBean)
-
-                    //  开灯
-                    SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
-                    //开门
-                    SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
-                    break
-                } else {
-                    Toast.makeText(
-                        this,
-                        dustbinStateBean.dustbinBoxType.toString() + "垃圾箱已满",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+//        var kitchenIsFull = true
+        DustbinBrainApp.dustbinBeanList?.let { list ->
+            list.find { it.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
+                addNeedCloseDustbin(model)
+//                otherIsFull = false
+                //  开灯
+                SerialProManager.getInstance().openLight(model.doorNumber)
+                //开门
+                SerialProManager.getInstance().openDoor(model.doorNumber)
+            }?:let {
+                Toast.makeText(
+                    this,
+                    DustbinENUM.KITCHEN.toString() + "垃圾箱已满",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+//        for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+//            if (dustbinStateBean.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString())) {
+//
+//                //  为什么不为 0 呢 ，0 号桶位置作废
+//                if (dustbinStateBean.isFull && dustbinStateBean.doorNumber != 0) {
+//                    kitchenIsFull = false
+//                    //  添加需要关闭的垃圾箱
+//                    addNeedCloseDustbin(dustbinStateBean)
+//
+//                    //  开灯
+//                    SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+//                    //开门
+//                    SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
+//                    break
+//                }
+//            }
+//        }
+//        if (kitchenIsFull) {
+//            Toast.makeText(
+//                this,
+//                DustbinENUM.KITCHEN.toString() + "垃圾箱已满",
+//                Toast.LENGTH_SHORT
+//            ).show()
+//        }
     }
 
     /**
@@ -177,7 +216,7 @@ class ControlActivity : BaseActivity() {
     private var timerTask: TimerTask? = null
     private var timer: Timer? = null
     var mUri: Uri? = null
-    var facePath:String?=null
+    var facePath: String? = null
     fun onControl(view: View) {
         val viewId = view.id
         when (viewId) {
@@ -280,6 +319,7 @@ class ControlActivity : BaseActivity() {
         object : Thread() {
             override fun run() {
                 super.run()
+
                 for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
                     SerialPortUtil.getInstance().sendData(
                         SerialProManager.getInstance()
@@ -309,7 +349,10 @@ class ControlActivity : BaseActivity() {
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
         hasManIsRun = true
-        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
+        LogUtils.dTag(
+            "改变倒计时",
+            "DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}"
+        )
         return super.dispatchTouchEvent(ev)
     }
 
@@ -317,7 +360,10 @@ class ControlActivity : BaseActivity() {
         super.onRestart()
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
         hasManIsRun = true
-        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
+        LogUtils.dTag(
+            "改变倒计时",
+            "DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}"
+        )
     }
 
     override fun onStop() {
@@ -428,7 +474,7 @@ class ControlActivity : BaseActivity() {
 
             //  查找该垃圾箱是否已经被添加进去，如果有则直接返回
             for (dustbinStateBeanChild in needCloseDustbin) {
-                if (dustbinStateBeanChild.doorNumber === dustbinStateBean.doorNumber) {
+                if (dustbinStateBeanChild.doorNumber == dustbinStateBean.doorNumber) {
                     return
                 }
             }
@@ -522,25 +568,33 @@ class ControlActivity : BaseActivity() {
      * 筛选合适的垃圾箱
      */
     private fun openDoorByType(type: String): DustbinStateBean? {
-        if (DustbinBrainApp.dustbinBeanList != null && DustbinBrainApp.dustbinBeanList!!.isNotEmpty()) {
-            LogUtils.iTag("筛选打开类型未满的垃圾箱")
-            var isFull = false
-            for (dustbinBean in DustbinBrainApp.dustbinBeanList!!) {
-                if (dustbinBean.dustbinBoxType === type) {
-                    if (!dustbinBean.isFull) {
-                        return dustbinBean
-                    } else {
-                        isFull = false
-                    }
-                }
-            }
-            if (isFull) {
+        var isFull = true
+        DustbinBrainApp.dustbinBeanList?.let { list->
+            list.find { it.dustbinBoxType.equals(type) && it.isFull }?.let { model->
+                return model
+            }?:let {
                 ToastUtils.showShort(type + "箱已满")
                 return null
             }
-        } else {
-            ToastUtils.showShort("垃圾箱配置为空")
         }
+//        if (DustbinBrainApp.dustbinBeanList != null && DustbinBrainApp.dustbinBeanList!!.isNotEmpty()) {
+//            LogUtils.iTag("筛选打开类型未满的垃圾箱")
+//
+//            for (dustbinBean in DustbinBrainApp.dustbinBeanList!!) {
+//                if (dustbinBean.dustbinBoxType === type) {
+//                    if (dustbinBean.isFull) {
+//                        isFull = false
+//                        return dustbinBean
+//                    }
+//                }
+//            }
+//            if (isFull) {
+//                ToastUtils.showShort(type + "箱已满")
+//                return null
+//            }
+//        } else {
+//            ToastUtils.showShort("垃圾箱配置为空")
+//        }
         return null
     }
 
@@ -600,10 +654,11 @@ class ControlActivity : BaseActivity() {
         map.put("bin_id", dustbinStateBean.id.toString())
         map.put("bin_type", dustbinStateBean.dustbinBoxNumber)
         map.put("post_weight", diff.toString())
-        map.put("former_weight", (dustbinStateBean.dustbinWeight-diff).toString())
+        map.put("former_weight", (dustbinStateBean.dustbinWeight - diff).toString())
         map.put("now_weight", dustbinStateBean.dustbinWeight.toString())
         map.put("plastic_bottle_num", "0")
-        map["err_code"] = if (dustbinStateBean.closeFailNumber == 0) "0" else "1" ////  0是正常的，其它是不正常的 1、2、3 对应一个err_msg
+        map["err_code"] =
+            if (dustbinStateBean.closeFailNumber == 0) "0" else "1" ////  0是正常的，其它是不正常的 1、2、3 对应一个err_msg
         map["err_msg"] =
             if (dustbinStateBean.closeFailNumber == 0) "无描述" else "关门失败，结算异常" //    异常描述
 

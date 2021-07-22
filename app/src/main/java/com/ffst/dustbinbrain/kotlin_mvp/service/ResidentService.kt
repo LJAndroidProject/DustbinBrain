@@ -1,6 +1,5 @@
 package com.ffst.dustbinbrain.kotlin_mvp.service
 
-import ZtlApi.ZtlManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -114,6 +113,16 @@ class ResidentService : Service() {
                                     .version_code > getAppVersionCode(this@ResidentService) && !downloading
                             ) {
                                 download(statusCallBean.data.apk_download_url)
+                            }
+                            if(statusCallBean.data.eq_status==0){
+                                //  断开连接
+                                //  断开连接
+                                TCPConnectUtil.getInstance().disconnect()
+                                //  重新连接
+                                //  重新连接
+                                TCPConnectUtil.getInstance().connect()
+
+                                NetWorkUtil.getInstance().errorUpload("上传状态时发现设备离线")
                             }
                         }
 

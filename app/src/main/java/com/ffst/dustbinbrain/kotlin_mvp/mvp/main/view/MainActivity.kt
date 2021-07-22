@@ -48,12 +48,10 @@ import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.SettingVar
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.viewmodel.MainActivityViewModel
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.CicleViewOutlineProvider
 import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.widget.FaceView
-import com.ffst.dustbinbrain.kotlin_mvp.mvp.test.SerialProtTestActivity
 import com.ffst.dustbinbrain.kotlin_mvp.service.CallService
 import com.ffst.dustbinbrain.kotlin_mvp.service.ResidentService
 import com.ffst.dustbinbrain.kotlin_mvp.utils.*
 import com.ffst.mvp.base.activity.BaseActivity
-import com.ffst.utils.ext.startKtActivity
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
@@ -188,7 +186,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         deviceCode = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
         AndroidDeviceSDK.autoStratAPP(this)
         AndroidDeviceSDK.hideStatus(false)
-        AndroidDeviceSDK.checkForeground(this)
+        AndroidDeviceSDK.keepActivity(this)
         AndroidDeviceSDK.setSchedulePowerOn()
         AndroidDeviceSDK.setSchedulePowerOff()
         CallService.start(this)
@@ -212,8 +210,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         val dustbinConfig =
             DataBaseUtil.getInstance(this).daoSession.dustbinConfigDao.queryBuilder().unique()
         DustbinBrainApp.dustbinConfig = dustbinConfig
-        DustbinBrainApp.dustbinBeanList =
-            DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null)
+        DustbinBrainApp.dustbinBeanList?.addAll(DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null))
+
         //  启动APP默认关闭所有门
         closeAllDoor()
 
@@ -353,7 +351,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                         //  结算超时
                         if (exitCode != 0) {
                             if (exitCode == 1) {
-                                closeAllDoor()
+//                                closeAllDoor()
                             }
                         }
                     } else {
@@ -1456,6 +1454,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 gson.fromJson(data, GQrReturnBean::class.java)
                             DustbinBrainApp.userId = gQrReturnBean.info.user_id
                             DustbinBrainApp.userType = gQrReturnBean.info.user_type.toLong()
+                            canRecognize = true
                             goControlActivity()
                         } else if (type == "nfcActivity") {
                             val nfcActivityBean: NfcActivityBean =

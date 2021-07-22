@@ -50,15 +50,16 @@ class PhoneLoginActivity : BaseActivity() {
                             //  手机号码登录返回结果
                             val phoneLoginBean: PhoneLoginBean =
                                 Gson().fromJson(response, PhoneLoginBean::class.java)
-                            if (phoneLoginBean.getCode() === 1) {
+                            if (phoneLoginBean.getCode() == 1) {
                                 DustbinBrainApp.userId = phoneLoginBean.data.user_id
                                 DustbinBrainApp.userType = phoneLoginBean.data.user_type.toLong()
-                                loadingView(false)
+                                hideLoadingView()
                                 var intent = Intent()
                                 intent.putExtra("isSuccess",true)
                                 setResult(MainActivity.REQUEST_CODE_PHONE_LOGIN,intent)
                                 finish()
                             } else {
+                                hideLoadingView()
                                 ToastUtils.showShort("请先使用微信扫描二维码绑定手机号码")
                             }
                         }

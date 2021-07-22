@@ -93,6 +93,12 @@ class SerialProtTestActivity : BaseActivity() {
             R.id.serial_test_back -> {
                 finish()
             }
+            R.id.keepApp -> {
+                AndroidDeviceSDK.keepActivity(this)
+            }
+            R.id.unKeepApp -> {
+                AndroidDeviceSDK.unKeepActivity()
+            }
             else -> {
 
 

@@ -58,7 +58,7 @@ public class DustbinStateBean {
     //  人工门开关
     private boolean artificialDoor;
     //  测满
-    private boolean isFull;
+    private boolean isFull = true;
     //  推杆过流
     private boolean pushRod;
     //  通信异常
@@ -160,6 +160,11 @@ public class DustbinStateBean {
     public void setArtificialDoor(boolean artificialDoor) {
         this.artificialDoor = artificialDoor;
     }
+
+    /**
+     * 未满为true,已满为false
+     * @return
+     */
     public boolean getIsFull() {
         return this.isFull;
     }
