@@ -55,26 +55,25 @@
         </FrameLayout>
 
     </RelativeLayout>
+
     <ImageView
         android:id="@+id/phone_login_siv"
         android:layout_width="@dimen/x123"
         android:layout_height="@dimen/x123"
-        android:layout_above="@+id/video_call_siv"
-        android:layout_alignParentRight="true"
-        android:layout_marginRight="@dimen/x15"
-        android:layout_marginBottom="@dimen/y23"
+        android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
+        android:layout_marginEnd="@dimen/x15"
+        android:layout_marginBottom="@dimen/y23"
         android:src="@mipmap/phone_btn" />
 
     <ImageView
         android:visibility="gone"
+        android:id="@+id/video_call_siv"
+        android:layout_above="@+id/phone_login_siv"
         android:layout_width="@dimen/x123"
         android:layout_height="@dimen/x123"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginRight="@dimen/x15"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="@dimen/x15"
         android:layout_marginBottom="@dimen/y23"
-        android:id="@+id/video_call_siv"
-
         android:src="@mipmap/video_call_btn" />
 </RelativeLayout>

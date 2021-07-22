@@ -20,8 +20,7 @@ class GetDustbinConfig {
     var code = 0
     var msg: String? = null
     var time: String? = null
-    //此id为当前设备登录IM音视频通讯所需
-    var id = "0"
+
     var data: DataBean? = null
 
     class DataBean {
@@ -34,6 +33,8 @@ class GetDustbinConfig {
         var count = 0
         var has_amat = 0
         var device_name: String? = null
+        //此id为当前设备登录IM音视频通讯所需
+        var id: String? = null
         var list: List<ListBean>? = null
 
         class ListBean {
@@ -56,7 +57,6 @@ class GetDustbinConfig {
                 ", msg='" + msg + '\'' +
                 ", time='" + time + '\'' +
                 ", data=" + data +
-                ", id=" + id +
                 '}'
     }
 }

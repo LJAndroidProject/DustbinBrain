@@ -44,7 +44,7 @@ class BindDeviceActivity : BaseActivity() {
     fun bindData() {
         viewModel?.liveDataForDustbinConfig?.observe(this) { data ->
             if (data.success) {
-                if (data.configData?.code === 1) {
+                if (data.configData?.code == 1) {
                     val id = bind_device_id.editText?.text
                     val auth = bind_device_auth.editText?.text
                     mmkv?.encode(MMKVCommon.DEVICE_ID, id.toString())
@@ -53,7 +53,7 @@ class BindDeviceActivity : BaseActivity() {
                     val list: MutableList<DustbinStateBean> = ArrayList<DustbinStateBean>()
                     val listBeans: List<GetDustbinConfig.DataBean.ListBean> =
                         getDustbinConfig.data!!.list!!
-                    mmkv?.encode(MMKVCommon.IM_USERID, getDustbinConfig.id)
+                    mmkv?.encode(MMKVCommon.IM_USERID, getDustbinConfig.data!!.id)
                     for (listBean in listBeans) {
 
                         //  垃圾箱id   服务器分配

@@ -29,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.TimeUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
@@ -57,6 +58,7 @@ import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
 import com.littlegreens.netty.client.status.ConnectState
 import com.tencent.liteav.login.model.ProfileManager
+import com.tencent.liteav.login.ui.ProfileActivity
 import com.tencent.liteav.trtccalling.ui.videocall.TRTCVideoCallActivity
 import com.tencent.mmkv.MMKV
 import kotlinx.android.synthetic.main.activity_main.*
@@ -189,7 +191,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         AndroidDeviceSDK.keepActivity(this)
         AndroidDeviceSDK.setSchedulePowerOn()
         AndroidDeviceSDK.setSchedulePowerOff()
-        CallService.start(this)
+
         initAndroidHandler()
         /* 初始化界面 */
         initView()
@@ -228,14 +230,21 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         mFeedFrameThread!!.start()
         //  开启读取数据服务，定时器
         startService(Intent(this, ResidentService::class.java))
+        val imUserId = mmkv?.decodeString(MMKVCommon.IM_USERID)
+        LogUtils.iTag("ProfileManager","登录ID：$imUserId")
         ProfileManager.getInstance().login(
-            mmkv?.decodeString(MMKVCommon.IM_USERID),
+            imUserId,
             "",
             object : ProfileManager.ActionCallback {
                 override fun onSuccess() {
+                    LogUtils.iTag("ProfileManager","通话登录成功")
+                    video_call_siv.visibility = View.VISIBLE
+                    CallService.start(this@MainActivity)
                 }
 
                 override fun onFailed(code: Int, msg: String?) {
+                    LogUtils.iTag("ProfileManager","${code}通话登录成功$msg")
+                    video_call_siv.visibility = View.GONE
                 }
             })
     }
