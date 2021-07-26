@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class DustbinBrainApp : Application() {
 
     companion object {
-        var userType: Long = 0
+        var userType: Long? = 0
         var userId: Int? = 0
         val TAG = "KotlinMvpApp"
         val TAG_RGMTEST = "人工门测试"

@@ -88,6 +88,30 @@ class ApiClient private constructor() {
         }
     }
 
+    fun getScanLogin(qrCodeScan:String,apiCallBack: ApiCallBack){
+        val url: String = CommonConstants.IP
+        ThreadManager.getInstance().execute {
+            var map: MutableMap<String, String> = mutableMapOf(
+                "user_code" to qrCodeScan
+            )
+            RetrofitClient.buildFormClient(url)!!.create(ServerAPI::class.java).getScanLogin(map)
+                .enqueue(object : Callback<ResponseBody> {
+                    override fun onResponse(
+                        call: Call<ResponseBody>,
+                        response: Response<ResponseBody?>?
+                    ) {
+                        LogUtils.dTag(TAG, response.toString())
+                        jsonResponseAndCallBack(apiCallBack, response)
+                    }
+
+                    override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                        jsonResponseAndCallBack(apiCallBack, null, t)
+                    }
+
+                })
+        }
+    }
+
     fun registerTCP(tcp_client_id: String, apiCallBack: ApiCallBack) {
         val url: String = CommonConstants.IP
         ThreadManager.getInstance().execute {

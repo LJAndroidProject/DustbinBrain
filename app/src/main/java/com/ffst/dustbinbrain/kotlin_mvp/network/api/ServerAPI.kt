@@ -35,4 +35,6 @@ interface ServerAPI {
     @POST("api/Android/throwRubbishPost")
     fun postThrowRubbishPost(@QueryMap param: MutableMap<String, String>):Call<ResponseBody>
 
+    @POST("api/Android/scanLogin")
+    fun getScanLogin(@QueryMap param: MutableMap<String, String>):Call<ResponseBody>
 }

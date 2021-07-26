@@ -3,6 +3,7 @@ package com.ffst.dustbinbrain.kotlin_mvp.mvp.main.viewmodel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.ffst.dustbinbrain.kotlin_mvp.bean.BinsWorkTimeBean
+import com.ffst.dustbinbrain.kotlin_mvp.bean.UserBeanModel
 import com.ffst.dustbinbrain.kotlin_mvp.manager.NetApiManager
 import com.ffst.dustbinbrain.kotlin_mvp.network.api.ResponseListener
 import com.google.gson.Gson
@@ -33,8 +34,17 @@ class MainActivityViewModel : ViewModel() {
         var data: String? = null
     }
 
+    class ScanLogin{
+        var success = false
+        var code: String? = null
+        var msg: String? = null
+        var time: String? = null
+        var data:UserBeanModel?=null
+    }
+
     var liveDataForDustbinConfig = MutableLiveData<WorkTimeData>()
     var liveDataForDeviceQrcode = MutableLiveData<DeviceQrcode>()
+    var liveDataForScanLogin = MutableLiveData<ScanLogin>()
 
     fun getBinsWorkTime(map: MutableMap<String, String>?) {
         NetApiManager.getInstance().getBinsWorkTime(map, object : ResponseListener {
@@ -93,6 +103,35 @@ class MainActivityViewModel : ViewModel() {
                     liveDataForDeviceQrcode.postValue(deviceQrcode)
                 }
                 liveDataForDeviceQrcode.postValue(deviceQrcode)
+            }
+        })
+    }
+
+    fun getScanLogin(qrCodeScan:String){
+        NetApiManager.getInstance().getScanLogin(qrCodeScan, object : ResponseListener {
+            var scanLogin = ScanLogin()
+            override fun onSuccess(extension: String?) {
+                try {
+                    scanLogin = Gson().fromJson(extension,ScanLogin::class.java)
+                    scanLogin.success = true
+                    liveDataForScanLogin.postValue(scanLogin)
+                }catch (e:Exception){
+                    scanLogin.success = false
+                    scanLogin.msg = "服务器数据解析异常"
+                    liveDataForScanLogin.postValue(scanLogin)
+                }
+
+            }
+
+            override fun onFail(extension: String?) {
+                try {
+                    scanLogin = Gson().fromJson(extension,ScanLogin::class.java)
+                    scanLogin.success = false
+                }catch (e:Exception){
+                    scanLogin.success = false
+                    scanLogin.msg = "服务器数据解析异常"
+                    liveDataForScanLogin.postValue(scanLogin)
+                }
             }
         })
     }

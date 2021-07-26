@@ -68,6 +68,20 @@ class NetApiManager private constructor(){
         })
     }
 
+    fun getScanLogin(qrCodeScan:String,listener: ResponseListener){
+        ApiClient.getInstance().getScanLogin(qrCodeScan,object :ApiCallBack{
+            override fun onFinish(result: JSONObject) {
+                LogUtils.dTag(TAG,"请求结果${result.toString()}")
+                val code:Int = result.optInt("code")
+                if (code == 1){
+                    listener.onSuccess(result.toString())
+                }else{
+                    listener.onFail(result.toString())
+                }
+            }
+        })
+    }
+
     fun postFaceRegisterSuccessLog(map: MutableMap<String,String>,listener: ResponseListener){
         ApiClient.getInstance().postFaceRegisterSuccessLog(map,object : ApiCallBack{
             override fun onFinish(result: JSONObject) {

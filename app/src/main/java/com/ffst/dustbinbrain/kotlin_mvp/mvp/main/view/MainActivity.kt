@@ -21,6 +21,7 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.util.LruCache
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
@@ -29,7 +30,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.TimeUtils
-import com.blankj.utilcode.util.ToastUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
@@ -58,7 +58,6 @@ import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
 import com.littlegreens.netty.client.status.ConnectState
 import com.tencent.liteav.login.model.ProfileManager
-import com.tencent.liteav.login.ui.ProfileActivity
 import com.tencent.liteav.trtccalling.ui.videocall.TRTCVideoCallActivity
 import com.tencent.mmkv.MMKV
 import kotlinx.android.synthetic.main.activity_main.*
@@ -212,7 +211,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         val dustbinConfig =
             DataBaseUtil.getInstance(this).daoSession.dustbinConfigDao.queryBuilder().unique()
         DustbinBrainApp.dustbinConfig = dustbinConfig
-        DustbinBrainApp.dustbinBeanList?.addAll(DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null))
+        DustbinBrainApp.dustbinBeanList?.addAll(
+            DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null)
+        )
 
         //  启动APP默认关闭所有门
         closeAllDoor()
@@ -231,22 +232,32 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         //  开启读取数据服务，定时器
         startService(Intent(this, ResidentService::class.java))
         val imUserId = mmkv?.decodeString(MMKVCommon.IM_USERID)
-        LogUtils.iTag("ProfileManager","登录ID：$imUserId")
+        LogUtils.iTag("ProfileManager", "登录ID：$imUserId")
         ProfileManager.getInstance().login(
             imUserId,
             "",
             object : ProfileManager.ActionCallback {
                 override fun onSuccess() {
-                    LogUtils.iTag("ProfileManager","通话登录成功")
-                    video_call_siv.visibility = View.VISIBLE
-                    CallService.start(this@MainActivity)
+                    LogUtils.iTag("ProfileManager", "通话登录成功")
+                    runOnUiThread {
+                        video_call_siv.visibility = View.VISIBLE
+                        CallService.start(this@MainActivity)
+                    }
                 }
 
                 override fun onFailed(code: Int, msg: String?) {
-                    LogUtils.iTag("ProfileManager","${code}通话登录成功$msg")
-                    video_call_siv.visibility = View.GONE
+                    LogUtils.iTag("ProfileManager", "${code}通话登录成功$msg")
+                    runOnUiThread {
+                        video_call_siv.visibility = View.GONE
+                    }
+
                 }
             })
+
+        scanKeyManager = ScanKeyManager { qrScan ->
+            LogUtils.eTag("USB扫码", "显示：$qrScan")
+            viewModel?.getScanLogin(qrScan)
+        }
     }
 
     private fun initView() {
@@ -427,12 +438,14 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                         )
                                     }
                                     //  本地实现
-                                    DataBaseUtil.getInstance(this@MainActivity)
-                                        .insertUserIdAndFaceTokenThread(
-                                            DustbinBrainApp.userId!!.toLong(),
-                                            DustbinBrainApp.userType,
-                                            nowFaceToken
-                                        )
+                                    DustbinBrainApp.userType?.let {
+                                        DataBaseUtil.getInstance(this@MainActivity)
+                                            .insertUserIdAndFaceTokenThread(
+                                                DustbinBrainApp.userId!!.toLong(),
+                                                it,
+                                                nowFaceToken
+                                            )
+                                    }
                                     //  上传人脸图片,特征值，以及用户id
                                     uploadFace(
                                         file!!,
@@ -800,6 +813,16 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 if (data.binsWorkTimeBean != null) {
                     binsWorkTimeBean = data.binsWorkTimeBean
                 }
+            }
+        }
+
+        viewModel?.liveDataForScanLogin?.observe(this) { data ->
+            if (data.success) {
+                val userBeanModel = data.data
+                DustbinBrainApp.userId = userBeanModel?.user_id?.toInt()
+                DustbinBrainApp.userType = userBeanModel?.user_type?.toLong()
+                canRecognize = true
+                goControlActivity()
             }
         }
 
@@ -1621,13 +1644,16 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             "binsWorkTime${binsWorkTimeBean?.getData()?.am_start_time}"
         )
         DustbinBrainApp.hasManTime = System.currentTimeMillis()
-        LogUtils.dTag("改变倒计时","DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}")
+        LogUtils.dTag(
+            "改变倒计时",
+            "DustbinBrainApp.hasManTime:${TimeUtils.millis2Date(DustbinBrainApp.hasManTime)}"
+        )
         //判断是否为特殊用户
-        if (DustbinBrainApp.userType.toInt() == 1) {
+        if (DustbinBrainApp.userType?.toInt() == 1) {
             //  跳转到垃圾箱控制台
             val intent = Intent(this@MainActivity, ControlActivity::class.java)
 //            val intent = Intent(this@MainActivity, SerialProtTestActivity::class.java)
-            intent.putExtra("userId", ""+DustbinBrainApp.userId)
+            intent.putExtra("userId", "" + DustbinBrainApp.userId)
             intent.putExtra("faceImage", faceImagePath)
             startActivityForResult(intent, 300)
         } else {
@@ -1640,7 +1666,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     ControlActivity::class.java
 //                    SerialProtTestActivity::class.java
                 )
-                intent.putExtra("userId", ""+DustbinBrainApp.userId)
+                intent.putExtra("userId", "" + DustbinBrainApp.userId)
                 intent.putExtra("faceImage", faceImagePath)
                 startActivityForResult(intent, 300)
             } else {
@@ -1771,5 +1797,14 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     Log.i("addFaceImage", "下载失败" + e.message)
                 }
             })
+    }
+
+    var scanKeyManager: ScanKeyManager? = null
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        if (event?.keyCode != KeyEvent.KEYCODE_BACK) {
+            scanKeyManager?.analysisKeyEvent(event)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 }

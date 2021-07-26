@@ -59,10 +59,10 @@ class ControlActivity : BaseActivity() {
         //关闭紫外线（后期由主板控制）
 //        SerialProManager.getInstance().closeTheDisinfection(1)
         beforeDustbinStateBeans = DustbinBrainApp.dustbinBeanList
-        //开门后关闭所有紫外线灯
-        for (dustbin in DustbinBrainApp.dustbinBeanList!!) {
-            SerialProManager.getInstance().closeTheDisinfection(dustbin.doorNumber)
-        }
+        //开门后关闭所有紫外线灯 作废：开门后关闭需要开门的紫外线就好
+//        for (dustbin in DustbinBrainApp.dustbinBeanList!!) {
+//            SerialProManager.getInstance().closeTheDisinfection(dustbin.doorNumber)
+//        }
         //
         if (isTaskRoot) {
             Log.i("isTaskRoot", "true")
@@ -115,11 +115,11 @@ class ControlActivity : BaseActivity() {
         /*
          * 开其它
          * */
-        var otherIsFull = true //是否全部已满，全部已满为true
         DustbinBrainApp.dustbinBeanList?.let { list ->
             list.find { it.dustbinBoxType.equals(DustbinENUM.OTHER.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
                 addNeedCloseDustbin(model)
-                otherIsFull = false
+                //关消毒
+                SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
                 //  开灯
                 SerialProManager.getInstance().openLight(model.doorNumber)
                 //开门
@@ -167,6 +167,8 @@ class ControlActivity : BaseActivity() {
             list.find { it.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
                 addNeedCloseDustbin(model)
 //                otherIsFull = false
+                //关消毒
+                SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
                 //  开灯
                 SerialProManager.getInstance().openLight(model.doorNumber)
                 //开门
@@ -388,7 +390,7 @@ class ControlActivity : BaseActivity() {
                 for (dustbinStateBean in needCloseDustbin /* 之前是关闭当前状态为开的门 APP.dustbinBeanList*/) {
 
                     //  如果人工门没有开，才开紫外线灯
-                    if (!dustbinStateBean.doorIsOpen) {
+                    if (dustbinStateBean.doorIsOpen) {
                         //  开消毒灯
                         val i: Int = DustbinUtil.getLeftOrRight(dustbinStateBean.doorNumber)
                         SerialProManager.getInstance().openElectromagnetism(i)
