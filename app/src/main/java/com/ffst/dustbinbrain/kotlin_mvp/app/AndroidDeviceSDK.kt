@@ -45,7 +45,7 @@ class AndroidDeviceSDK {
          * 备注：使能或者关闭定时开关机功能，直接设置第三个参数为true(使能)/false(关闭)
          */
         fun setSchedulePowerOn(){
-            //设置 Android 设备 17：00 每天定时开机
+            //设置 Android 设备 6：30每天定时开机
             ZtlManager.GetInstance().setSchedulePowerOn(6,30,true);
         }
 
@@ -55,14 +55,19 @@ class AndroidDeviceSDK {
          * 备注：使能或者关闭定时开关机功能，直接设置第三个参数为true(使能)/false(关闭)
          */
         fun setSchedulePowerOff(){
-            //设置 Android 设备 9：30 每天定时关机
+            //设置 Android 设备 21：30 每天定时关机
             ZtlManager.GetInstance().setSchedulePowerOff(21,30,true);
         }
 
-        //无需root权限静默安装APK
+        //安装APP并启动安装的APP
         fun installApp(filePath:String){
             //filePath：APK文件安装路径。
-            ZtlManager.GetInstance().installApp(filePath);
+            ZtlManager.GetInstance().installAppAndStartUp(filePath, pkgName);
+        }
+
+        //
+        fun getSimIccid(){
+
         }
     }
 }

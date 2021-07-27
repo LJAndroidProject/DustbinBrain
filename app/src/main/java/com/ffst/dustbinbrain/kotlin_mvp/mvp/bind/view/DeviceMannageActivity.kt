@@ -31,6 +31,7 @@ class DeviceMannageActivity : AppCompatActivity() {
         PERMISSION_READ_STORAGE,
         PERMISSION_INTERNET,
         PERMISSION_ACCESS_NETWORK_STATE,
+        Manifest.permission.READ_PHONE_STATE,
         Manifest.permission.ACCESS_COARSE_LOCATION
     )
     var mmkv: MMKV? = null

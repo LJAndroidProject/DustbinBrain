@@ -17,6 +17,7 @@ import com.blankj.utilcode.util.TimeUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.adapter.DustbinControlItemAdapter
+import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustBinRecordRequestParams
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinENUM
@@ -127,7 +128,7 @@ class ControlActivity : BaseActivity() {
             }?:let {
                 Toast.makeText(
                     this,
-                    "其他垃圾" + "垃圾箱已满",
+                    "其他垃圾箱已满",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -176,7 +177,7 @@ class ControlActivity : BaseActivity() {
             }?:let {
                 Toast.makeText(
                     this,
-                    DustbinENUM.KITCHEN.toString() + "垃圾箱已满",
+                      "厨余垃圾箱已满",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -223,6 +224,7 @@ class ControlActivity : BaseActivity() {
         val viewId = view.id
         when (viewId) {
             R.id.resgit_face_btn -> {
+                AndroidDeviceSDK.unKeepActivity()
                 //人脸注册
                 //  步骤一：创建存储照片的文件
                 val path = Environment.getExternalStorageDirectory().toString()
@@ -296,6 +298,7 @@ class ControlActivity : BaseActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
             MainActivity.REQUEST_CODE_CAMERA -> {
+                AndroidDeviceSDK.keepActivity(this)
                 LogUtils.e("注册返回")
                 closeAllDoor()
                 Handler(Looper.getMainLooper()).post {

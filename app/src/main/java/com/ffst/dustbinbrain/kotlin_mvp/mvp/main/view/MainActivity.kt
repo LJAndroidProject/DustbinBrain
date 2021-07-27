@@ -30,6 +30,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.volley.toolbox.ImageLoader
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.TimeUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.ffst.annotation.StatusBar
 import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
@@ -202,9 +203,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         var map: MutableMap<String, String> = mutableMapOf(
             "device_id" to deviceCode.toString()
         )
-        viewModel!!.getBinsWorkTime(map)
+        viewModel?.getBinsWorkTime(map)
         //获取投放二维码
-        viewModel!!.getDeviceQrcode(map)
+        viewModel?.getDeviceQrcode(map)
 
 
         //  设置垃圾箱配置
@@ -226,9 +227,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         //初始化人脸识别配置
         initFaceHandler()
         mRecognizeThread = RecognizeThread()
-        mRecognizeThread!!.start()
+        mRecognizeThread?.start()
         mFeedFrameThread = FeedFrameThread()
-        mFeedFrameThread!!.start()
+        mFeedFrameThread?.start()
         //  开启读取数据服务，定时器
         startService(Intent(this, ResidentService::class.java))
         val imUserId = mmkv?.decodeString(MMKVCommon.IM_USERID)
@@ -256,6 +257,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
         scanKeyManager = ScanKeyManager { qrScan ->
             LogUtils.eTag("USB扫码", "显示：$qrScan")
+            loadingView(true)
+            canRecognize = false
             viewModel?.getScanLogin(qrScan)
         }
     }
@@ -304,9 +307,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         preview.outlineProvider = CicleViewOutlineProvider(FaceView.circleDimater)
         preview.clipToOutline = true
         //加载预览界面
-        manager!!.setPreviewDisplay(preview)
+        manager?.setPreviewDisplay(preview)
         /* 注册相机回调函数 */
-        manager!!.setListener(this)
+        manager?.setListener(this)
         show_login_qr.setImageBitmap(QRCodeUtil.getAppletLoginCode("https://ffadmin.fenfeneco.com/index.php/index/index/weixinRegister?device_id=" + deviceCode + "&device_type=2"));
         video_call_siv.setOnClickListener {
             val callUserId = "123456789"
@@ -345,7 +348,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     override fun onResume() {
         super.onResume()
-        manager!!.open(windowManager, false, cameraWidth, cameraHeight)
+        manager?.open(windowManager, false, cameraWidth, cameraHeight)
         canRecognize = true
         LogUtils.iTag(TAG, "回到首页，开启人脸识别")
     }
@@ -353,12 +356,13 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     override fun onPause() {
         super.onPause()
         LogUtils.iTag(TAG, "页面跳转，暂停人脸识别")
-        manager!!.release()
+        manager?.release()
         canRecognize = false
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        canRecognize = true
         when (requestCode) {
             CONTROL_RESULT_CODE -> {
 
@@ -388,26 +392,28 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                         try {
                             //  提取特征值
                             val facePassExtractFeatureResult =
-                                mFacePassHandler!!.extractFeature(bitmap)
+                                mFacePassHandler?.extractFeature(bitmap)
 
                             //  如果特征值合格
-                            if (facePassExtractFeatureResult.result == 0) {
+                            if (facePassExtractFeatureResult?.result == 0) {
                                 val facePassFeatureAppendInfo = FacePassFeatureAppendInfo()
 
                                 //  创建 faceToken
-                                val faceToken = mFacePassHandler!!.insertFeature(
+                                val faceToken = mFacePassHandler?.insertFeature(
                                     facePassExtractFeatureResult.featureData,
                                     facePassFeatureAppendInfo
                                 )
-                                nowFaceToken = faceToken
+                                if (faceToken != null) {
+                                    nowFaceToken = faceToken
+                                }
                                 val bindResult =
-                                    mFacePassHandler!!.bindGroup(
+                                    mFacePassHandler?.bindGroup(
                                         group_name,
-                                        faceToken.toByteArray()
+                                        faceToken?.toByteArray()
                                     )
 
                                 //  绑定结果
-                                if (bindResult) {
+                                if (bindResult == true) {
                                     Log.i(
                                         TAG,
                                         "绑定成功faceToken:$faceToken" + "  , userId:${DustbinBrainApp.userId} , userType:${DustbinBrainApp.userType}"
@@ -453,7 +459,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                         DustbinBrainApp.userId!!.toLong()
                                     )
                                 } else {
-                                    mFacePassHandler!!.deleteFace(faceToken.toByteArray())
+                                    mFacePassHandler!!.deleteFace(faceToken?.toByteArray())
                                     Log.i(TAG, "绑定失败")
                                 }
                             } else {
@@ -488,7 +494,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             }
             REQUEST_CODE_PHONE_LOGIN -> {
                 manager?.release()
-                canRecognize = true
+
                 if (data != null) {
                     if (data.getBooleanExtra("isSuccess", false)) {
                         goControlActivity()
@@ -817,12 +823,15 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         }
 
         viewModel?.liveDataForScanLogin?.observe(this) { data ->
+            canRecognize = true
+            hideLoadingView()
             if (data.success) {
                 val userBeanModel = data.data
                 DustbinBrainApp.userId = userBeanModel?.user_id?.toInt()
                 DustbinBrainApp.userType = userBeanModel?.user_type?.toLong()
-                canRecognize = true
                 goControlActivity()
+            }else{
+                ToastUtils.showShort("${data.msg}")
             }
         }
 
@@ -1586,20 +1595,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
 
                             //  查询是否已经有这个人的特征值
-                            val userMessage: UserMessage =
+                            val userMessage: UserMessage? =
                                 DataBaseUtil.getInstance(this@MainActivity)
-                                    .getDaoSession()!!.getUserMessageDao().queryBuilder()
-                                    .where(UserMessageDao.Properties.UserId.eq(userId))
-                                    .unique()
+                                    .daoSession?.userMessageDao?.queryBuilder()?.where(UserMessageDao.Properties.UserId.eq(userId))?.unique()
                             //  本地已经有这个人脸特征了，则删除掉原有的人脸特征，添加新的人脸特征
                             if (userMessage != null) {
                                 //  人脸库中删除这个人脸特征
-                                mFacePassHandler!!.deleteFace(
-                                    userMessage.getFaceToken().toByteArray()
+                                mFacePassHandler?.deleteFace(
+                                    userMessage.faceToken.toByteArray()
                                 )
                                 //  本地数据库中删除这个用户
                                 DataBaseUtil.getInstance(this@MainActivity)
-                                    .getDaoSession()!!.userMessageDao.delete(userMessage)
+                                    .getDaoSession()?.userMessageDao?.delete(userMessage)
                                 Log.i("addFaceImage", "删除旧的人脸特征与注册信息" + userMessage.getUserId())
                             } else {
                                 Log.i("addFaceImage", "不存在该用户，可以添加$userId")
@@ -1637,7 +1644,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             var map: MutableMap<String, String> = mutableMapOf(
                 "device_id" to deviceCode.toString()
             )
-            viewModel!!.getBinsWorkTime(map)
+            viewModel?.getBinsWorkTime(map)
         }
         LogUtils.dTag(
             "goControlActivity",
@@ -1700,7 +1707,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             //  步骤一：创建存储照片的文件
             val path = Environment.getExternalStorageDirectory().toString()
             file = File(path, System.currentTimeMillis().toString() + ".jpg")
-            if (!file!!.parentFile.exists()) file!!.parentFile.mkdirs()
+            if (!file?.parentFile?.exists()!!) file?.parentFile?.mkdirs()
             mUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 //  步骤二：Android 7.0及以上获取文件 Uri
                 FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file!!)
@@ -1746,35 +1753,37 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
                         //  提取图片特征值
                         val facePassExtractFeatureResult =
-                            mFacePassHandler!!.extractFeature(BitmapFactory.decodeFile(file.absolutePath))
+                            mFacePassHandler?.extractFeature(BitmapFactory.decodeFile(file.absolutePath))
                         //  如果特征值合格
-                        if (facePassExtractFeatureResult.result == 0) {
+                        if (facePassExtractFeatureResult?.result == 0) {
                             val facePassFeatureAppendInfo = FacePassFeatureAppendInfo()
 
                             //  创建 faceToken
-                            val faceToken = mFacePassHandler!!.insertFeature(
+                            val faceToken = mFacePassHandler?.insertFeature(
                                 facePassExtractFeatureResult.featureData,
                                 facePassFeatureAppendInfo
                             )
-                            nowFaceToken = faceToken
+                            if (faceToken != null) {
+                                nowFaceToken = faceToken
+                            }
                             val bindResult =
-                                mFacePassHandler!!.bindGroup(group_name, faceToken.toByteArray())
+                                mFacePassHandler?.bindGroup(group_name, faceToken?.toByteArray())
 
                             //  绑定结果
-                            if (bindResult) {
+                            if (bindResult == true) {
                                 Log.i("addFaceImage", "$userId,绑定成功$faceToken")
                                 //  本地实现
                                 DataBaseUtil.getInstance(this@MainActivity)
                                     .insertUserIdAndFaceTokenThread(userId, userType, nowFaceToken)
-                                val deviceId: String? = mmkv!!.decodeString(MMKVCommon.DEVICE_ID)
+                                val deviceId: String? = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
                                 val hasMap: MutableMap<String, String> = mutableMapOf(
                                     "user_id" to userId.toString(),
                                     "device_id" to deviceId!!
                                 )
                                 //  通知人脸合格
-                                viewModel!!.postFaceRegisterSuccessLog(hasMap)
+                                viewModel?.postFaceRegisterSuccessLog(hasMap)
                             } else {
-                                mFacePassHandler!!.deleteFace(faceToken.toByteArray())
+                                mFacePassHandler?.deleteFace(faceToken?.toByteArray())
                                 Log.i("addFaceImage", "$userId,绑定失败")
                             }
                         } else {
@@ -1801,6 +1810,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     var scanKeyManager: ScanKeyManager? = null
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        LogUtils.e("event keyCode:${event?.keyCode}")
         if (event?.keyCode != KeyEvent.KEYCODE_BACK) {
             scanKeyManager?.analysisKeyEvent(event)
             return true

@@ -8,10 +8,12 @@ import com.ffst.dustbinbrain.kotlin_mvp.R
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
 import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
+import com.ffst.dustbinbrain.kotlin_mvp.utils.CrashHandler
 import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
+import com.tencent.bugly.crashreport.CrashReport
 import com.tencent.liteav.login.model.ProfileManager
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.CopyOnWriteArrayList
@@ -21,6 +23,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * @date 2019/8/18 00:18
  */
 class DustbinBrainApp : Application() {
+    //bugly初始化使用的APPID
+    private val buglyAppId = "b98d724c6c"
 
     companion object {
         var userType: Long? = 0
@@ -41,99 +45,36 @@ class DustbinBrainApp : Application() {
         }
 
         fun setDustbinState(context: Context, dustbinStateBean: DustbinStateBean) {
-            dustbinBeanList?.let {list->
-               // val index = it.indexOfFirst {
+            dustbinBeanList?.let { list ->
+                // val index = it.indexOfFirst {
                 //    LogUtils.iTag(TAG_RGMTEST, "获取index")
-                  //  it.doorNumber == dustbinStateBean.doorNumber
+                //  it.doorNumber == dustbinStateBean.doorNumber
                 //}
-                list.find { it.doorNumber == dustbinStateBean.doorNumber }?.let {model->
+                list.find { it.doorNumber == dustbinStateBean.doorNumber }?.let { model ->
                     dustbinStateBean.id = model.getId()
                     dustbinStateBean.dustbinBoxType =
                         model.getDustbinBoxType()
                     dustbinStateBean.dustbinBoxNumber =
                         model.getDustbinBoxNumber()
-                    list.set(list.indexOf(model),dustbinStateBean)
-                }?:let {
+                    list.set(list.indexOf(model), dustbinStateBean)
+                } ?: let {
                     // 这里相当于 else
                     list.add(dustbinStateBean)
                 }
-//
-//                if (index>=0){
-//                    //  dustbinStateBean没有设置 垃圾箱  id 导致为 null
-//                    dustbinStateBean.id = it[index].getId()
-//                    dustbinStateBean.dustbinBoxType =
-//                        it[index].getDustbinBoxType()
-//                    dustbinStateBean.dustbinBoxNumber =
-//                        it[index].getDustbinBoxNumber()
-//                    it.set(index,dustbinStateBean)
-//                }
             }
             LogUtils.iTag(TAG_RGMTEST, "开始修改值")
-//            for (dsbList in dustbinBeanList!!) {
-//                if (dsbList.doorNumber == dustbinStateBean.doorNumber) {
-//                    LogUtils.iTag(
-//                        TAG_RGMTEST,
-//                        dustbinStateBean.doorNumber.toString() + ",之前:" + dsbList.artificialDoor +
-//                                ",之后:" + dustbinStateBean.artificialDoor
-//                    )
-//                    //  如果之前人工门关闭为 true，而新的为 false 说明人工门被打开了
-//                    if (dsbList.artificialDoor && !dustbinStateBean.artificialDoor) {
-//                        LogUtils.iTag(
-//                            TAG_RGMTEST,
-//                            dustbinStateBean.doorNumber.toString() + "号门人工门被开启"
-//                        )
-//                        //  关闭本身的紫外线灯
-//                        SerialProManager.getInstance()
-//                            .closeTheDisinfection(dustbinStateBean.doorNumber)
-//                        //  是否为 奇数
-//                        val isOddNumber = dustbinStateBean.doorNumber % 2 != 0
-//                        //  奇数 + 1，偶数 -1
-//                        val adjoinDoorNumber = if (isOddNumber) 1 else -1
-//
-//                        SerialPortUtil.getInstance().sendData(
-//                            SerialProManager.getInstance()
-//                                .closeTheDisinfection(dustbinStateBean.doorNumber + adjoinDoorNumber)
-//                        )
-//                    }
-//
-//                    //  如果之前人工门开启为 true，而新的为 false 说明人工门被关闭了
-//                    if (!dsbList.artificialDoor && dustbinStateBean.artificialDoor) {
-//                        LogUtils.iTag(
-//                            TAG_RGMTEST,
-//                            dustbinStateBean.doorNumber.toString() + "号门人工门被关闭"
-//                        )
-//
-//                        //  关闭本身的紫外线灯
-//                        SerialProManager.getInstance()
-//                            .closeTheDisinfection(dustbinStateBean.doorNumber)
-//                        //  是否为 奇数
-//                        val isOddNumber = dustbinStateBean.doorNumber % 2 != 0
-//                        //  奇数 + 1，偶数 -1
-//                        val adjoinDoorNumber = if (isOddNumber) 1 else -1
-//
-//                        SerialPortUtil.getInstance().sendData(
-//                            SerialProManager.getInstance()
-//                                .openTheDisinfection(dustbinStateBean.doorNumber + adjoinDoorNumber)
-//                        )
-//                    }
-//                }
-//
-//
-//                //  之前没有设置 垃圾箱  id 导致为 null
-//                dustbinStateBean.id = dsbList.getId()
-//                dustbinStateBean.dustbinBoxType =
-//                    dsbList.getDustbinBoxType()
-//                dustbinStateBean.dustbinBoxNumber =
-//                    dsbList.getDustbinBoxNumber()
-//                dustbinBeanList?.set(1, dustbinStateBean)
-//            }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         LogUtils.dTag(TAG, getFilesDir().getAbsolutePath() + "/fenfen/mmkv")
-
+//        CrashReport.initCrashReport(
+//            applicationContext,
+//            buglyAppId,
+//            true
+//        )
+        CrashHandler.getInstance().init(applicationContext)
         MMKV.initialize(this, getFilesDir().getAbsolutePath() + "/fenfen/mmkv");
         //定昌设备初始化
         ZtlManager.GetInstance().setContext(applicationContext)

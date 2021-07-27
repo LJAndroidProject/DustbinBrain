@@ -65,11 +65,15 @@ class PhoneLoginActivity : BaseActivity() {
                         }
 
                         override fun fail(call: Call?, e: IOException) {
+                            //取消转圈，避免无法操作
+                            hideLoadingView()
                             Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT)
                                 .show()
                         }
 
                         override fun error(e: Exception) {
+                            //取消转圈，避免无法操作
+                            hideLoadingView()
                             Toast.makeText(this@PhoneLoginActivity, e.message, Toast.LENGTH_SHORT)
                                 .show()
                         }

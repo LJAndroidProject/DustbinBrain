@@ -90,6 +90,7 @@ class MainActivityViewModel : ViewModel() {
                     deviceQrcode.msg = "服务器数据解析异常"
                     liveDataForDeviceQrcode.postValue(deviceQrcode)
                 }
+                liveDataForDeviceQrcode.postValue(deviceQrcode)
             }
 
             override fun onFail(extension: String?) {
@@ -114,13 +115,12 @@ class MainActivityViewModel : ViewModel() {
                 try {
                     scanLogin = Gson().fromJson(extension,ScanLogin::class.java)
                     scanLogin.success = true
-                    liveDataForScanLogin.postValue(scanLogin)
                 }catch (e:Exception){
                     scanLogin.success = false
                     scanLogin.msg = "服务器数据解析异常"
                     liveDataForScanLogin.postValue(scanLogin)
                 }
-
+                liveDataForScanLogin.postValue(scanLogin)
             }
 
             override fun onFail(extension: String?) {
@@ -132,6 +132,7 @@ class MainActivityViewModel : ViewModel() {
                     scanLogin.msg = "服务器数据解析异常"
                     liveDataForScanLogin.postValue(scanLogin)
                 }
+                liveDataForScanLogin.postValue(scanLogin)
             }
         })
     }

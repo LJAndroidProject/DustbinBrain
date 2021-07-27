@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
+import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustBinRecordRequestParams
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateUploadBean
@@ -116,13 +117,11 @@ class ResidentService : Service() {
                             }
                             if(statusCallBean.data.eq_status==0){
                                 //  断开连接
-                                //  断开连接
                                 TCPConnectUtil.getInstance().disconnect()
-                                //  重新连接
                                 //  重新连接
                                 TCPConnectUtil.getInstance().connect()
 
-                                NetWorkUtil.getInstance().errorUpload("上传状态时发现设备离线")
+                                NetWorkUtil.getInstance().errorUpload("上传状态时发现设备离线,${AndroidDeviceSDK.getSimIccid()}")
                             }
                         }
 
@@ -159,10 +158,10 @@ class ResidentService : Service() {
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
     fun uploadDustBinRecord(params: DustBinRecordRequestParams?){
-        LogUtils.d(TAG, "EventBus收到map：" + params!!.getRequestMap())
+        LogUtils.d(TAG, "EventBus收到map：" + params?.getRequestMap())
         NetWorkUtil.getInstance().doPost(
             ServerAddress.DUSTBIN_RECORD,
-            params.getRequestMap(),
+            params?.getRequestMap(),
             object : NetWorkUtil.NetWorkListener {
                 override fun success(response: String) {
                     LogUtils.d(TAG, "投递记录成功上传服务器: $response")
@@ -180,7 +179,7 @@ class ResidentService : Service() {
 
     @Subscribe(threadMode = ThreadMode.ASYNC)
     fun uploadDustBinRecord(data:String){
-        LogUtils.d(TAG, "EventBus收到data：" + data)
+        LogUtils.d(TAG, "EventBus收到data：$data")
         if(!TextUtils.isEmpty(data)){
             download(data)
         }
@@ -198,22 +197,26 @@ class ResidentService : Service() {
             downloading = true
             DownloadUtil.get().download(url, saveDir, fileName, object : DownloadUtil.OnDownloadListener {
                 override fun onDownloadSuccess(file: File?) {
+                    LogUtils.iTag("download","文件路径：${file?.absolutePath},  文件大小：${file?.length()}")
                     //  延迟一下比较好
                     Handler(Looper.getMainLooper()).postDelayed(
                         { downloading = false },
                         (10 * 1000).toLong()
                     )
                     if (file != null) {
-                        installApk(file)
+//                        installApk(file)
                         ToastUtils.showShort("开始远程更新APP")
+                        AndroidDeviceSDK.installApp(file.path)
 //                        ZtlManager.GetInstance().installAppAndStartUp(file.absolutePath, this@ResidentService.packageName);
                     }
                 }
 
                 override fun onDownloading(progress: Int) {
+                    LogUtils.iTag("download","进度：$progress")
                 }
 
                 override fun onDownloadFailed(e: Exception?) {
+                    LogUtils.iTag("download","失败：${e.toString()}")
                     downloading = false
                 }
 

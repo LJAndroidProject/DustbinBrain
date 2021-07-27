@@ -34,6 +34,9 @@ buildscript {
         classpath 'com.hujiang.aspectjx:gradle-android-plugin-aspectjx:2.0.10'
         classpath "org.koin:koin-gradle-plugin:$koin_version"
         classpath 'org.greenrobot:greendao-gradle-plugin:3.3.0' // 添加插件 更好支持GreenDao
+        //引入腾讯Bugly上传异常信息
+        classpath 'com.tencent.bugly:symtabfileuploader:latest.release'
+
     }
 }
 

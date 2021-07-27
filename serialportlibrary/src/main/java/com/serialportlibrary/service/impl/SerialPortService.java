@@ -1,24 +1,17 @@
 package com.serialportlibrary.service.impl;
 
 import android.os.SystemClock;
-
 import android.serialport.SerialPort;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.serialportlibrary.service.ISerialPortService;
 import com.serialportlibrary.util.ByteStringUtil;
 import com.serialportlibrary.util.LogUtil;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.Arrays;
-
-import static android.content.ContentValues.TAG;
 
 
 public class SerialPortService implements ISerialPortService {
@@ -75,7 +68,7 @@ public class SerialPortService implements ISerialPortService {
                 outputStream.write(data);
                 outputStream.flush();
 
-                Long time = System.currentTimeMillis();
+                long time = System.currentTimeMillis();
                 //暂存每次返回数据长度，不变的时候为读取完数据
                 int receiveLeanth = 0;
                 while (System.currentTimeMillis() - time < mTimeOut) {
