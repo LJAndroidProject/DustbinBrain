@@ -264,7 +264,7 @@ class ControlActivity : BaseActivity() {
         when (viewId) {
             R.id.resgit_face_btn -> {
 
-                AndroidDeviceSDK.unKeepActivity()
+                AndroidDeviceSDK.unKeepActivity(this)
                 //人脸注册
                 //  步骤一：创建存储照片的文件
                 val path = Environment.getExternalStorageDirectory().toString()
@@ -272,7 +272,8 @@ class ControlActivity : BaseActivity() {
                 if (!file.parentFile.exists()) file.parentFile.mkdirs()
                 mUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     //  步骤二：Android 7.0及以上获取文件 Uri
-                    FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                        LogUtils.e("fileprovider")
+                    FileProvider.getUriForFile(this, "com.ffst.dustbinbrain.kotlin_mvp.utils.MyFileProvider", file)
                 } else {
                     //  步骤三：获取文件Uri
                     Uri.fromFile(file)
@@ -378,8 +379,8 @@ class ControlActivity : BaseActivity() {
 
                     //  开排气扇
 
-                    SerialProManager.getInstance()
-                        .openExhaustFan(dustbinStateBean.doorNumber)
+//                    SerialProManager.getInstance()
+//                        .openExhaustFan(dustbinStateBean.doorNumber)
 
                     try {
                         sleep(10)
@@ -411,11 +412,9 @@ class ControlActivity : BaseActivity() {
                     //  开排气扇
 
 
-                    resgit_face_btn.postDelayed(object : Runnable {
-                        override fun run() {
-                            SerialProManager.getInstance()
-                                .openExhaustFan(dustbinStateBean.doorNumber)
-                        }
+                    resgit_face_btn.postDelayed({
+                        //                            SerialProManager.getInstance()
+                        //                                .openExhaustFan(dustbinStateBean.doorNumber)
                     }, 100)
                 }
             }
@@ -508,7 +507,8 @@ class ControlActivity : BaseActivity() {
                         resgit_face_btn.postDelayed(object : Runnable {
                             override fun run() {
                                 //  开补光灯
-                                SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+                                SerialProManager.getInstance()
+                                    .openLight(dustbinStateBean.doorNumber)
                             }
                         }, 200)
 
@@ -571,7 +571,8 @@ class ControlActivity : BaseActivity() {
 
                 resgit_face_btn.postDelayed(object : Runnable {
                     override fun run() {
-                        SerialProManager.getInstance().closeElectromagnetism(dustbinStateBean.doorNumber)
+                        SerialProManager.getInstance()
+                            .closeElectromagnetism(dustbinStateBean.doorNumber)
                     }
                 }, 200)
 
@@ -585,7 +586,7 @@ class ControlActivity : BaseActivity() {
     var hasManTask: TimerTask? = null
     var hasManTimer = Timer()
     private var hasManIsRun = true
-    private val AUTO_EXIT_TIME: Long = 60
+    private val AUTO_EXIT_TIME: Long = 30
 
     fun hasMan() {
         hasManTask = object : TimerTask() {

@@ -187,9 +187,14 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         mFeedFrameQueue = ArrayBlockingQueue(1)
         deviceCode = mmkv?.decodeString(MMKVCommon.DEVICE_ID)
         AndroidDeviceSDK.autoStratAPP(this)
-        AndroidDeviceSDK.hideStatus(false)
+        if ("qingzheng" === AndroidDeviceSDK.deviceType) {
+
+            AndroidDeviceSDK.hideStatus(this, true)
+        } else {
+            AndroidDeviceSDK.hideStatus(this, false)
+        }
         AndroidDeviceSDK.keepActivity(this)
-        AndroidDeviceSDK.setSchedulePowerOn()
+        AndroidDeviceSDK.setSchedulePowerOn(this)
         AndroidDeviceSDK.setSchedulePowerOff()
         AndroidDeviceSDK.setDynamicIP()
 
@@ -242,7 +247,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 override fun onSuccess() {
                     LogUtils.iTag("ProfileManager", "通话登录成功")
                     runOnUiThread {
-                        video_call_siv.visibility = View.VISIBLE
+                        if ("qingzheng" === AndroidDeviceSDK.deviceType) {
+                            video_call_siv.visibility = View.GONE
+                        } else {
+                            video_call_siv.visibility = View.VISIBLE
+
+                        }
                         CallService.start(this@MainActivity)
                     }
                 }
@@ -831,7 +841,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 DustbinBrainApp.userId = userBeanModel?.user_id?.toInt()
                 DustbinBrainApp.userType = userBeanModel?.user_type?.toLong()
                 goControlActivity()
-            }else{
+            } else {
                 ToastUtils.showShort("${data.msg}")
             }
         }
@@ -1589,7 +1599,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             //  查询是否已经有这个人的特征值
                             val userMessage: UserMessage? =
                                 DataBaseUtil.getInstance(this@MainActivity)
-                                    .daoSession?.userMessageDao?.queryBuilder()?.where(UserMessageDao.Properties.UserId.eq(userId))?.unique()
+                                    .daoSession?.userMessageDao?.queryBuilder()
+                                    ?.where(UserMessageDao.Properties.UserId.eq(userId))?.unique()
                             //  本地已经有这个人脸特征了，则删除掉原有的人脸特征，添加新的人脸特征
                             if (userMessage != null) {
                                 //  人脸库中删除这个人脸特征

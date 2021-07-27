@@ -208,6 +208,9 @@ class ResidentService : Service() {
 //                        installApk(file)
                         ToastUtils.showShort("开始远程更新APP")
                         AndroidDeviceSDK.installApp(file.path)
+                        if("qingzheng"===AndroidDeviceSDK.deviceType){
+                            installApk(file)
+                        }
 //                        ZtlManager.GetInstance().installAppAndStartUp(file.absolutePath, this@ResidentService.packageName);
                     }
                 }

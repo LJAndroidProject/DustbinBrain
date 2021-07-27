@@ -85,10 +85,10 @@ class SerialProtTestActivity : BaseActivity() {
                 SerialProManager.getInstance().closeDoor(doorNum)
             }
             R.id.show_SystemBar -> {
-                AndroidDeviceSDK.hideStatus(true)
+                AndroidDeviceSDK.hideStatus(this,true)
             }
             R.id.hide_SystemBar -> {
-                AndroidDeviceSDK.hideStatus(false)
+                AndroidDeviceSDK.hideStatus(this,false)
             }
             R.id.serial_test_back -> {
                 finish()
@@ -97,7 +97,7 @@ class SerialProtTestActivity : BaseActivity() {
                 AndroidDeviceSDK.keepActivity(this)
             }
             R.id.unKeepApp -> {
-                AndroidDeviceSDK.unKeepActivity()
+                AndroidDeviceSDK.unKeepActivity(this)
             }
             else -> {
 
