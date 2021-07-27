@@ -121,7 +121,8 @@ class ResidentService : Service() {
                                 //  重新连接
                                 TCPConnectUtil.getInstance().connect()
 
-                                NetWorkUtil.getInstance().errorUpload("上传状态时发现设备离线,${AndroidDeviceSDK.getSimIccid()}")
+                                NetWorkUtil.getInstance().errorUpload("上传状态时发现设备离线,${AndroidDeviceSDK.getSimIccid(this@ResidentService)}")
+                                AndroidDeviceSDK.restartApp(this@ResidentService)
                             }
                         }
 
@@ -139,10 +140,10 @@ class ResidentService : Service() {
             override fun run() {
                 if(DustbinBrainApp.dustbinBeanList?.size!!>0){
                     for(dustbinBeanList in DustbinBrainApp.dustbinBeanList!!){
-                        LogUtils.iTag(TAG, "获取垃圾箱状态${dustbinBeanList.doorNumber}")
+                        LogUtils.iTag(TAG, "桶位个数：${DustbinBrainApp.dustbinBeanList?.size}获取垃圾箱状态${dustbinBeanList.doorNumber}")
                         SerialProManager.getInstance().getData(dustbinBeanList.doorNumber)
                         try {
-                            Thread.sleep(400)
+                            Thread.sleep(1000)
                         } catch (e: java.lang.Exception) {
                             e.printStackTrace()
                         }
@@ -152,7 +153,7 @@ class ResidentService : Service() {
 
         }
         val timer1 = Timer()
-        timer1.schedule(getDustbinState,1,1000*30)
+        timer1.schedule(getDustbinState,0,1000*60)
 
     }
 

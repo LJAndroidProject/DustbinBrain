@@ -191,6 +191,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         AndroidDeviceSDK.keepActivity(this)
         AndroidDeviceSDK.setSchedulePowerOn()
         AndroidDeviceSDK.setSchedulePowerOff()
+        AndroidDeviceSDK.setDynamicIP()
 
         initAndroidHandler()
         /* 初始化界面 */
@@ -605,7 +606,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                         DustbinBrainApp.userId.toString() + "绑定 " + nowFaceToken
                                     )
                                     file.delete()
-                                    goControlActivity()
+//                                    goControlActivity()
                                 }
                             }
 
@@ -1566,16 +1567,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 //                            NetWorkUtil.getInstance().errorUpload("用户类型已全部修改为 0 ")
                             Log.i("updateAllUserType0", "修改之前")
                         } else if (type == "connect_restartApp_msg") {
-                            var url =
-                                "https://ffadmin.fenfeneco.com/uploads/20210630/74a1162af848ccf6ee362dd16454ff18.apk"
-                            val packageManager: PackageManager = packageManager
-                            val intent =
-                                packageManager.getLaunchIntentForPackage(getPackageName())
-                            if (intent != null) {
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                startActivity(intent)
-                                Process.killProcess(Process.myPid())
-                            }
+                            AndroidDeviceSDK.restartApp(this@MainActivity)
                         } else if (type == "updateApp1to1") {
                             if (!TextUtils.isEmpty(data)) {
                                 //执行更新操作

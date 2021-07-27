@@ -13,7 +13,6 @@ import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
-import com.tencent.bugly.crashreport.CrashReport
 import com.tencent.liteav.login.model.ProfileManager
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.CopyOnWriteArrayList
@@ -59,7 +58,8 @@ class DustbinBrainApp : Application() {
                     list.set(list.indexOf(model), dustbinStateBean)
                 } ?: let {
                     // 这里相当于 else
-                    list.add(dustbinStateBean)
+                    //不能ADD 否则获取数据会变成双倍
+//                    list.add(dustbinStateBean)
                 }
             }
             LogUtils.iTag(TAG_RGMTEST, "开始修改值")

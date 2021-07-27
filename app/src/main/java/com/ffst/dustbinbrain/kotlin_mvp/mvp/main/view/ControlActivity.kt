@@ -94,10 +94,23 @@ class ControlActivity : BaseActivity() {
                     return@setOnItemChildClickListener
                 }
                 //开门关闭消毒，开启照明
-                SerialProManager.getInstance().closeTheDisinfection(dustbinStateBean.doorNumber)
-                SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+                resgit_face_btn.postDelayed(object : Runnable {
+                    override fun run() {
+                        SerialProManager.getInstance()
+                            .closeTheDisinfection(dustbinStateBean.doorNumber)
+                    }
+                }, 0)
+                resgit_face_btn.postDelayed(object : Runnable {
+                    override fun run() {
+                        SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+                    }
+                }, 30)
                 addNeedCloseDustbin(dustbinStateBean)
-                SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
+                resgit_face_btn.postDelayed(object : Runnable {
+                    override fun run() {
+                        SerialProManager.getInstance().openDoor(dustbinStateBean.doorNumber)
+                    }
+                }, 60)
             }
         }
         dustbin_list.layoutManager = GridLayoutManager(this, 2)
@@ -117,15 +130,28 @@ class ControlActivity : BaseActivity() {
          * 开其它
          * */
         DustbinBrainApp.dustbinBeanList?.let { list ->
-            list.find { it.dustbinBoxType.equals(DustbinENUM.OTHER.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
-                addNeedCloseDustbin(model)
-                //关消毒
-                SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
-                //  开灯
-                SerialProManager.getInstance().openLight(model.doorNumber)
-                //开门
-                SerialProManager.getInstance().openDoor(model.doorNumber)
-            }?:let {
+            list.find { it.dustbinBoxType.equals(DustbinENUM.OTHER.toString()) && it.isFull && it.doorNumber != 0 }
+                ?.let { model ->
+                    addNeedCloseDustbin(model)
+
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            //关消毒
+                            SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
+                        }
+                    }, 0)
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance().openLight(model.doorNumber)
+                        }
+                    }, 30)
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance().openDoor(model.doorNumber)
+                        }
+                    }, 60)
+
+                } ?: let {
                 Toast.makeText(
                     this,
                     "其他垃圾箱已满",
@@ -165,19 +191,32 @@ class ControlActivity : BaseActivity() {
          * */
 //        var kitchenIsFull = true
         DustbinBrainApp.dustbinBeanList?.let { list ->
-            list.find { it.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString()) && it.isFull&&it.doorNumber!=0}?.let {model->
-                addNeedCloseDustbin(model)
+            list.find { it.dustbinBoxType.equals(DustbinENUM.KITCHEN.toString()) && it.isFull && it.doorNumber != 0 }
+                ?.let { model ->
+                    addNeedCloseDustbin(model)
 //                otherIsFull = false
-                //关消毒
-                SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
-                //  开灯
-                SerialProManager.getInstance().openLight(model.doorNumber)
-                //开门
-                SerialProManager.getInstance().openDoor(model.doorNumber)
-            }?:let {
+
+
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            //关消毒
+                            SerialProManager.getInstance().closeTheDisinfection(model.doorNumber)
+                        }
+                    }, 0)
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance().openLight(model.doorNumber)
+                        }
+                    }, 30)
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance().openDoor(model.doorNumber)
+                        }
+                    }, 60)
+                } ?: let {
                 Toast.makeText(
                     this,
-                      "厨余垃圾箱已满",
+                    "厨余垃圾箱已满",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -224,6 +263,7 @@ class ControlActivity : BaseActivity() {
         val viewId = view.id
         when (viewId) {
             R.id.resgit_face_btn -> {
+
                 AndroidDeviceSDK.unKeepActivity()
                 //人脸注册
                 //  步骤一：创建存储照片的文件
@@ -300,7 +340,8 @@ class ControlActivity : BaseActivity() {
             MainActivity.REQUEST_CODE_CAMERA -> {
                 AndroidDeviceSDK.keepActivity(this)
                 LogUtils.e("注册返回")
-                closeAllDoor()
+                closeOpenDoor()
+
                 Handler(Looper.getMainLooper()).post {
                     if (exitProgressDialog != null) {
                         exitProgressDialog!!.dismiss()
@@ -318,6 +359,38 @@ class ControlActivity : BaseActivity() {
         }
     }
 
+    fun closeOpenDoor() {
+        //  关闭已经开启的门
+        object : Thread() {
+            override fun run() {
+                super.run()
+
+                for (dustbinStateBean in needCloseDustbin) {
+
+                    SerialProManager.getInstance()
+                        .closeDoor(dustbinStateBean.doorNumber)
+
+                    try {
+                        sleep(10)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+
+                    //  开排气扇
+
+                    SerialProManager.getInstance()
+                        .openExhaustFan(dustbinStateBean.doorNumber)
+
+                    try {
+                        sleep(10)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }.start()
+    }
+
     //  关闭所有门
     private fun closeAllDoor() {
         //  启动APP就关闭所有门
@@ -326,26 +399,24 @@ class ControlActivity : BaseActivity() {
                 super.run()
 
                 for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
-                    SerialPortUtil.getInstance().sendData(
-                        SerialProManager.getInstance()
-                            .closeDoor(dustbinStateBean.doorNumber)
-                    )
-                    try {
-                        sleep(250)
-                    } catch (e: java.lang.Exception) {
-                        e.printStackTrace()
-                    }
+
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance()
+                                .closeDoor(dustbinStateBean.doorNumber)
+                        }
+                    }, 0)
+
 
                     //  开排气扇
-                    SerialPortUtil.getInstance().sendData(
-                        SerialProManager.getInstance()
-                            .openExhaustFan(dustbinStateBean.doorNumber)
-                    )
-                    try {
-                        sleep(250)
-                    } catch (e: java.lang.Exception) {
-                        e.printStackTrace()
-                    }
+
+
+                    resgit_face_btn.postDelayed(object : Runnable {
+                        override fun run() {
+                            SerialProManager.getInstance()
+                                .openExhaustFan(dustbinStateBean.doorNumber)
+                        }
+                    }, 100)
                 }
             }
         }.start()
@@ -396,14 +467,23 @@ class ControlActivity : BaseActivity() {
                     if (dustbinStateBean.doorIsOpen) {
                         //  开消毒灯
                         val i: Int = DustbinUtil.getLeftOrRight(dustbinStateBean.doorNumber)
-                        SerialProManager.getInstance().openElectromagnetism(i)
-                        try {
-                            sleep(100)
-                        } catch (e: InterruptedException) {
-                            e.printStackTrace()
-                        }
-                        SerialProManager.getInstance()
-                            .openElectromagnetism(dustbinStateBean.doorNumber)
+
+
+
+                        resgit_face_btn.postDelayed(object : Runnable {
+                            override fun run() {
+                                SerialProManager.getInstance().openElectromagnetism(i)
+                            }
+                        }, 0)
+
+                        resgit_face_btn.postDelayed(object : Runnable {
+                            override fun run() {
+                                SerialProManager.getInstance()
+                                    .openElectromagnetism(dustbinStateBean.doorNumber)
+                            }
+                        }, 100)
+
+
                     }
 
                     //  如果是开门的
@@ -425,16 +505,15 @@ class ControlActivity : BaseActivity() {
 
                         //  关门
                         SerialProManager.getInstance().closeDoor(dustbinStateBean.doorNumber)
-                        try {
-                            sleep(400)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        resgit_face_btn.postDelayed(object : Runnable {
+                            override fun run() {
+                                //  开补光灯
+                                SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+                            }
+                        }, 200)
 
 
-                        //  开补光灯
-                        SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
-                        SerialProManager.getInstance().openLight(dustbinStateBean.doorNumber)
+
                         Log.i(
                             DEBUG_TAG_TASK,
                             dustbinStateBean.doorNumber.toString() + "开始添加投递记录"
@@ -489,12 +568,13 @@ class ControlActivity : BaseActivity() {
             Thread {
                 val i: Int = DustbinUtil.getLeftOrRight(dustbinStateBean.doorNumber)
                 SerialProManager.getInstance().closeElectromagnetism(i)
-                try {
-                    Thread.sleep(500)
-                } catch (e: InterruptedException) {
-                    e.printStackTrace()
-                }
-                SerialProManager.getInstance().closeElectromagnetism(dustbinStateBean.doorNumber)
+
+                resgit_face_btn.postDelayed(object : Runnable {
+                    override fun run() {
+                        SerialProManager.getInstance().closeElectromagnetism(dustbinStateBean.doorNumber)
+                    }
+                }, 200)
+
             }.start()
         }
     }
@@ -505,7 +585,7 @@ class ControlActivity : BaseActivity() {
     var hasManTask: TimerTask? = null
     var hasManTimer = Timer()
     private var hasManIsRun = true
-    private val AUTO_EXIT_TIME: Long = 30
+    private val AUTO_EXIT_TIME: Long = 60
 
     fun hasMan() {
         hasManTask = object : TimerTask() {
@@ -574,10 +654,10 @@ class ControlActivity : BaseActivity() {
      */
     private fun openDoorByType(type: String): DustbinStateBean? {
         var isFull = true
-        DustbinBrainApp.dustbinBeanList?.let { list->
-            list.find { it.dustbinBoxType.equals(type) && it.isFull }?.let { model->
+        DustbinBrainApp.dustbinBeanList?.let { list ->
+            list.find { it.dustbinBoxType.equals(type) && it.isFull }?.let { model ->
                 return model
-            }?:let {
+            } ?: let {
                 ToastUtils.showShort(type + "箱已满")
                 return null
             }
