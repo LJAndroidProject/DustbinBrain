@@ -1,11 +1,9 @@
 package com.ffst.dustbinbrain.kotlin_mvp.utils;
 
 
-import android.util.Log;
-
+import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK;
 import com.serialportlibrary.service.impl.SerialPortBuilder;
 import com.serialportlibrary.service.impl.SerialPortService;
-import com.serialportlibrary.util.ByteStringUtil;
 
 /**
  * 串口读写
@@ -27,6 +25,12 @@ public class SerialPortUtil {
         if(serialPortUtil == null){
             synchronized (SerialPortUtil.class){
                 if(serialPortUtil == null){
+                    String devPort = "";
+                    if("qingzheng".equals(AndroidDeviceSDK.Companion.getDeviceType())){
+                        devPort = "dev/ttyS2";
+                    }else{
+                        devPort = "dev/ttyS4";
+                    }
                     serialPortUtil = new SerialPortUtil();
 
                     serialPortService = new SerialPortBuilder()
@@ -34,15 +38,17 @@ public class SerialPortUtil {
                             .setBaudrate(115200)
 //                            .setDevicePath("dev/ttyS4") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             //创显塑料接口是ttyS1
-                            .setDevicePath("dev/ttyS3") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
+//                            .setDevicePath("dev/ttyS3") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
 //                            .setDevicePath("dev/ttyS4") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             //廉洁公园点接的串口是TTL  通道是ttyS2
-//                            .setDevicePath("dev/ttyS2") //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
+                            .setDevicePath(devPort) //  售卖机的 232是 ttyS1 、 垃圾箱的ttl 是 ttyS2  、 大屏用ttyS3
                             .createService();
 
                     if(serialPortService != null){
                         serialPortService.isOutputLog(true);
                     }
+                    assert serialPortService != null;
+                    serialPortService.startSendQueue();
                 }
             }
         }
@@ -70,11 +76,11 @@ public class SerialPortUtil {
 
     public byte[] sendData(byte[] data){
 
-        Log.i(TAG, "发送：" + ByteStringUtil.byteArrayToHexStr(data));
+//        Log.i(TAG, "发送：" + ByteStringUtil.byteArrayToHexStr(data));
 //        if(null == serialPortService){
 //            return null;
 //        }
-        return serialPortService.sendData(data);
+        return serialPortService.insertSendQueue(data);
     }
 
 

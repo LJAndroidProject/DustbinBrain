@@ -8,11 +8,13 @@ import org.greenrobot.greendao.database.Database;
 import org.greenrobot.greendao.identityscope.IdentityScopeType;
 import org.greenrobot.greendao.internal.DaoConfig;
 
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DeliveryRecord;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.UserMessage;
 import com.ffst.dustbinbrain.kotlin_mvp.facepass.ErrorReportBean;
 
+import com.ffst.dustbinbrain.kotlin_mvp.bean.DeliveryRecordDao;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfigDao;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBeanDao;
 import com.ffst.dustbinbrain.kotlin_mvp.bean.UserMessageDao;
@@ -27,11 +29,13 @@ import com.ffst.dustbinbrain.kotlin_mvp.bean.ErrorReportBeanDao;
  */
 public class DaoSession extends AbstractDaoSession {
 
+    private final DaoConfig deliveryRecordDaoConfig;
     private final DaoConfig dustbinConfigDaoConfig;
     private final DaoConfig dustbinStateBeanDaoConfig;
     private final DaoConfig userMessageDaoConfig;
     private final DaoConfig errorReportBeanDaoConfig;
 
+    private final DeliveryRecordDao deliveryRecordDao;
     private final DustbinConfigDao dustbinConfigDao;
     private final DustbinStateBeanDao dustbinStateBeanDao;
     private final UserMessageDao userMessageDao;
@@ -40,6 +44,9 @@ public class DaoSession extends AbstractDaoSession {
     public DaoSession(Database db, IdentityScopeType type, Map<Class<? extends AbstractDao<?, ?>>, DaoConfig>
             daoConfigMap) {
         super(db);
+
+        deliveryRecordDaoConfig = daoConfigMap.get(DeliveryRecordDao.class).clone();
+        deliveryRecordDaoConfig.initIdentityScope(type);
 
         dustbinConfigDaoConfig = daoConfigMap.get(DustbinConfigDao.class).clone();
         dustbinConfigDaoConfig.initIdentityScope(type);
@@ -53,11 +60,13 @@ public class DaoSession extends AbstractDaoSession {
         errorReportBeanDaoConfig = daoConfigMap.get(ErrorReportBeanDao.class).clone();
         errorReportBeanDaoConfig.initIdentityScope(type);
 
+        deliveryRecordDao = new DeliveryRecordDao(deliveryRecordDaoConfig, this);
         dustbinConfigDao = new DustbinConfigDao(dustbinConfigDaoConfig, this);
         dustbinStateBeanDao = new DustbinStateBeanDao(dustbinStateBeanDaoConfig, this);
         userMessageDao = new UserMessageDao(userMessageDaoConfig, this);
         errorReportBeanDao = new ErrorReportBeanDao(errorReportBeanDaoConfig, this);
 
+        registerDao(DeliveryRecord.class, deliveryRecordDao);
         registerDao(DustbinConfig.class, dustbinConfigDao);
         registerDao(DustbinStateBean.class, dustbinStateBeanDao);
         registerDao(UserMessage.class, userMessageDao);
@@ -65,10 +74,15 @@ public class DaoSession extends AbstractDaoSession {
     }
     
     public void clear() {
+        deliveryRecordDaoConfig.clearIdentityScope();
         dustbinConfigDaoConfig.clearIdentityScope();
         dustbinStateBeanDaoConfig.clearIdentityScope();
         userMessageDaoConfig.clearIdentityScope();
         errorReportBeanDaoConfig.clearIdentityScope();
+    }
+
+    public DeliveryRecordDao getDeliveryRecordDao() {
+        return deliveryRecordDao;
     }
 
     public DustbinConfigDao getDustbinConfigDao() {

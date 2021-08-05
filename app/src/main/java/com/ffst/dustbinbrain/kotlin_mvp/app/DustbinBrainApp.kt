@@ -13,6 +13,7 @@ import com.ffst.dustbinbrain.kotlin_mvp.utils.SerialPortUtil
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
+import com.tencent.bugly.crashreport.CrashReport
 import com.tencent.liteav.login.model.ProfileManager
 import com.tencent.mmkv.MMKV
 import java.util.concurrent.CopyOnWriteArrayList

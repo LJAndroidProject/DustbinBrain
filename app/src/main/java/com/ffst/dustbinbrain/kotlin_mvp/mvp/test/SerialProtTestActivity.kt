@@ -23,41 +23,11 @@ class SerialProtTestActivity : BaseActivity() {
     fun sendDataPort(v: View) {
         var doorText = getdoor.text.toString()
         var doorNum = 0
-        when (doorText) {
-            "1" -> {
-                doorNum = 1
-            }
-            "2" -> {
-                doorNum = 2
-            }
-            "3" -> {
-                doorNum = 3
-            }
-            "4" -> {
-                doorNum = 4
-            }
-            "5" -> {
-                doorNum = 5
-            }
-            "6" -> {
-                doorNum = 6
-            }
-            "7" -> {
-                doorNum = 7
-            }
-            "8" -> {
-                doorNum = 8
-            }
-            "9" -> {
-                doorNum = 9
-            }
-            "10" -> {
-                doorNum = 10
-            }
-            else -> {
-                doorNum = 1
-            }
-
+        if (doorText.isEmpty()) {
+            doorText = "0"
+        }
+        if (doorText.toInt() in 1..16) {
+            doorNum = doorText.toInt()
         }
         when (v.id) {
             R.id.open_door -> {
@@ -67,28 +37,28 @@ class SerialProtTestActivity : BaseActivity() {
                 SerialProManager.getInstance().closeDoor(doorNum)
             }
             R.id.open_paiqi -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().openExhaustFan(doorNum)
             }
             R.id.close_paiqi -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().closeExhaustFan(doorNum)
             }
             R.id.open_xiaodu -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().openTheDisinfection(doorNum)
             }
             R.id.close_xiaodu -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().closeTheDisinfection(doorNum)
             }
             R.id.open_zhaoming -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().openLight(doorNum)
             }
             R.id.close_zhaoming -> {
-                SerialProManager.getInstance().closeDoor(doorNum)
+                SerialProManager.getInstance().closeLight(doorNum)
             }
             R.id.show_SystemBar -> {
-                AndroidDeviceSDK.hideStatus(this,true)
+                AndroidDeviceSDK.hideStatus(this, true)
             }
             R.id.hide_SystemBar -> {
-                AndroidDeviceSDK.hideStatus(this,false)
+                AndroidDeviceSDK.hideStatus(this, false)
             }
             R.id.serial_test_back -> {
                 finish()

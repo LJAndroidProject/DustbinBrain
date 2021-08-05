@@ -15,8 +15,10 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/debug" />
+            <option value="$PROJECT_DIR$/livemulti" />
             <option value="$PROJECT_DIR$/login" />
             <option value="$PROJECT_DIR$/mvp" />
+            <option value="$PROJECT_DIR$/pgPluginLib" />
             <option value="$PROJECT_DIR$/serialportlibrary" />
             <option value="$PROJECT_DIR$/trtccallingdemo" />
             <option value="$PROJECT_DIR$/utils" />

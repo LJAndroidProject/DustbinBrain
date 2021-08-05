@@ -1,1 +1,3 @@
 include ':app', ':mvp', ':annotation', ':compiler', ':aop', ':utils',':serialportlibrary',":trtccallingdemo",":login",":debug"
+include ':pgPluginLib'
+include ':livemulti'

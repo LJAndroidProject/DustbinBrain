@@ -2,7 +2,6 @@ package com.ffst.dustbinbrain.kotlin_mvp.mvp.main.view
 
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -174,6 +173,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     private var mLastClickTime = 0.toLong()
     private var mSecretNumber = 0
 
+    private var dustbinArrry = mutableListOf<DustbinStateBean>()
     override fun layoutId(): Int {
         return R.layout.activity_main
     }
@@ -218,10 +218,11 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         val dustbinConfig =
             DataBaseUtil.getInstance(this).daoSession.dustbinConfigDao.queryBuilder().unique()
         DustbinBrainApp.dustbinConfig = dustbinConfig
+        val dustbinList = DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null)
         DustbinBrainApp.dustbinBeanList?.addAll(
-            DataBaseUtil.getInstance(this@MainActivity).getDustbinByType(null)
+            dustbinList
         )
-
+        dustbinArrry.addAll(dustbinList)
         //  启动APP默认关闭所有门
         closeAllDoor()
 
@@ -492,7 +493,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     }
                 }
                 Thread {
-                    for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
+                    for (dustbinStateBean in dustbinArrry) {
                         //  关补光灯
                         SerialProManager.getInstance().closeLight(dustbinStateBean.doorNumber)
                         try {
@@ -639,11 +640,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         object : Thread() {
             override fun run() {
                 super.run()
-                for (dustbinStateBean in DustbinBrainApp.dustbinBeanList!!) {
-                    SerialPortUtil.getInstance().sendData(
-                        SerialProManager.getInstance()
-                            .closeDoor(dustbinStateBean.doorNumber)
-                    )
+                for (dustbinStateBean in dustbinArrry) {
+                    SerialProManager.getInstance()
+                        .closeDoor(dustbinStateBean.doorNumber)
                     try {
                         sleep(250)
                     } catch (e: java.lang.Exception) {
@@ -651,10 +650,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     }
 
                     //  开排气扇
-                    SerialPortUtil.getInstance().sendData(
-                        SerialProManager.getInstance()
-                            .openExhaustFan(dustbinStateBean.doorNumber)
-                    )
+                    SerialProManager.getInstance()
+                        .openExhaustFan(dustbinStateBean.doorNumber)
                     try {
                         sleep(250)
                     } catch (e: java.lang.Exception) {
@@ -1301,10 +1298,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
             )
             lastPassTime = System.currentTimeMillis()
             faceImagePath = mFacePassHandler!!.getFaceImagePath(faceToken.toByteArray())
+            val list = userMessageDao!!.queryBuilder().list()
+            for (um in list) {
+                Log.i(TAG, "人脸id数据库：$um")
+            }
             //  跳转到垃圾箱控制台
             goControlActivity()
         } else {
             Log.i("addFaceImage", "找不到" + faceToken + "对应的用户")
+            val list = userMessageDao!!.queryBuilder().list()
+            for (um in list) {
+                Log.i(TAG, "人脸id数据库：$um")
+            }
         }
     }
 
@@ -1528,6 +1533,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 NearByFeatrueSendBean::class.java
                             )
                             if (nearByFeatrueSendBean != null && nearByFeatrueSendBean.getFeatrue() != null) {
+                                if (nearByFeatrueSendBean.user_id == 1720) {
+                                    Log.i("响应结果", nearByFeatrueSendBean.toString())
+                                }
                                 Log.i("响应结果", nearByFeatrueSendBean.toString())
                                 //  获取来自服务器人脸特征 ( 字符串之前是 Base64 形式 )
                                 val feature: ByteArray = Base64.decode(

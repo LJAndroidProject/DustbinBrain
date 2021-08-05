@@ -145,7 +145,7 @@ public class DataBaseUtil {
 
         if(userMessage != null){
             //  说明存在该记录，则使用次数添加 + 1，这一步骤主要是为了以后清理使用次数较少的人脸
-
+            userMessage.setFaceToken(faceToken);
             //  使用次数 + 1
             userMessage.setUsedNumber(userMessage.getUsedNumber() + 1);
             //  上次使用时间

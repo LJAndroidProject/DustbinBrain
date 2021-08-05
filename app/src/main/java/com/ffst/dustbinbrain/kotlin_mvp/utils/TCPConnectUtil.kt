@@ -42,18 +42,18 @@ class TCPConnectUtil {
 
     fun connect() {
         if (null == mNettyTcpClient) return
-        mNettyTcpClient!!.connect() //连接服务器
+        mNettyTcpClient?.connect() //连接服务器
     }
 
 
     fun reconnect() {
         if (null == mNettyTcpClient) return
-        mNettyTcpClient!!.reconnect() //重连接服务器
+        mNettyTcpClient?.reconnect() //重连接服务器
     }
 
     fun disconnect() {
         if (null == mNettyTcpClient) return
-        mNettyTcpClient!!.disconnect() //断开连接
+        mNettyTcpClient?.disconnect() //断开连接
     }
 
 

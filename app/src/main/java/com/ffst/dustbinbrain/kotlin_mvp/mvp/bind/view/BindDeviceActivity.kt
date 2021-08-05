@@ -9,6 +9,7 @@ import com.ffst.annotation.ClickGap
 import com.ffst.annotation.MethodLog
 import com.ffst.annotation.enums.LEVEL
 import com.ffst.dustbinbrain.kotlin_mvp.R
+import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinConfig
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
 import com.ffst.dustbinbrain.kotlin_mvp.bean.GetDustbinConfig
@@ -99,7 +100,9 @@ class BindDeviceActivity : BaseActivity() {
                     DataBaseUtil.getInstance(this)
                         .getDaoSession()!!.dustbinConfigDao.insertOrReplace(dustbinConfig) //  保存配置
 
-
+                    if(DustbinBrainApp.dustbinBeanList?.isNotEmpty() == true){
+                        DustbinBrainApp.dustbinBeanList!!.clear()
+                    }
                     goMainActivity()
                 }
                 hideLoadingView()
