@@ -53,6 +53,7 @@ public class CallService extends Service {
                         callUserInfo.userId = model.userId;
                         callUserInfo.userAvatar = model.userAvatar;
                         callUserInfo.userName = model.userName;
+//                        VoiceUtil.getInstance().loopCallMusics(CallService.this,"call_music.m4a");
                         TRTCVideoCallActivity.startBeingCall(CallService.this, selfInfo, callUserInfo, null);
                     } else if (callType == TRTCCalling.TYPE_AUDIO_CALL) {
                         TRTCAudioCallActivity.UserInfo selfInfo = new TRTCAudioCallActivity.UserInfo();
@@ -63,6 +64,7 @@ public class CallService extends Service {
                         callUserInfo.userId = model.userId;
                         callUserInfo.userAvatar = model.userAvatar;
                         callUserInfo.userName = model.userName;
+//                        VoiceUtil.getInstance().loopCallMusics(CallService.this,"call_music.m4a");
                         TRTCAudioCallActivity.startBeingCall(CallService.this, selfInfo, callUserInfo, null);
                     }
                 }

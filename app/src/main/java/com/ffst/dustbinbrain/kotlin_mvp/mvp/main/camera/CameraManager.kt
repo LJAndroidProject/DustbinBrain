@@ -8,6 +8,8 @@ import android.util.Log
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.WindowManager
+import com.blankj.utilcode.util.LogUtils
+import com.ffst.utils.ext.TAG
 import java.util.*
 
 /**
@@ -21,7 +23,7 @@ class CameraManager : CameraPreview.CameraPreviewListener {
     protected var surfaceHolder: SurfaceHolder? = null
     private var listener: CameraListener? = null
     private var cameraPreview: CameraPreview? = null
-    private var state = CameraState.IDEL
+    public var state = CameraState.IDEL
     private val previewDegreen = 0
     private var manualWidth = 0
     private var manualHeight = 0
@@ -47,6 +49,7 @@ class CameraManager : CameraPreview.CameraPreviewListener {
 
     fun open(windowManager: WindowManager): Boolean {
         return if (state != CameraState.OPENING) {
+            LogUtils.dTag(TAG," camera open()")
             state = CameraState.OPENING
             release()
             object : AsyncTask<Any?, Any?, Any?>() {
@@ -175,6 +178,7 @@ class CameraManager : CameraPreview.CameraPreviewListener {
 
     fun release() {
         if (camera != null) {
+            LogUtils.dTag(TAG," camera release()")
             cameraPreview!!.setCamera(null)
             camera!!.stopPreview()
             camera!!.setPreviewCallback(null)

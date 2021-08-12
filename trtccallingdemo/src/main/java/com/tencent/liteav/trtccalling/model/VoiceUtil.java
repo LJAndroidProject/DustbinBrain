@@ -1,4 +1,4 @@
-package com.ffst.dustbinbrain.kotlin_mvp.utils;
+package com.tencent.liteav.trtccalling.model;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
@@ -62,5 +62,49 @@ public class VoiceUtil {
             }
         }).start();
     }
+
+
+    public synchronized void loopCallMusics(final Context context,final String fileName) {
+
+        if(System.currentTimeMillis() - useTime < 2000){
+            return;
+        }
+
+        useTime = System.currentTimeMillis();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    //播放 assets/a2.mp3 音乐文件
+                    AssetFileDescriptor fd = context.getAssets().openFd(fileName);
+                    mediaPlayer = new MediaPlayer();
+                    mediaPlayer.setDataSource(fd.getFileDescriptor(), fd.getStartOffset(), fd.getLength());
+//                    mediaPlayer.setLooping(true);
+                    mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                        int index = 0;
+                        @Override
+                        public void onCompletion(MediaPlayer mp) {
+                            if(index<9){
+                                mp.start();
+                                index++;
+                            }
+                        }
+                    });
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+    }
+
+    public synchronized  void stopMediaPlayer(){
+        mediaPlayer.stop();
+    }
+
 
 }

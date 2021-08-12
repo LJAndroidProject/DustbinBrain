@@ -440,6 +440,7 @@ public class TRTCVideoCallActivity extends AppCompatActivity {
         mHangupLl.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+//                VoiceUtil.getInstance().stopMediaPlayer();
                 mTRTCCalling.reject();
                 stopCameraAndFinish();
             }
@@ -448,12 +449,17 @@ public class TRTCVideoCallActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //2.接听电话
+//                VoiceUtil.getInstance().stopMediaPlayer();
                 mTRTCCalling.accept();
                 showCallingView();
             }
         });
         //4. 展示其他用户界面
         showOtherInvitingUserView();
+        mDialingLl.postDelayed(() -> {
+            mTRTCCalling.accept();
+            showCallingView();
+        },1000*3);
     }
 
     /**

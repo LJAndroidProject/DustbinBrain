@@ -58,6 +58,7 @@ import com.google.gson.JsonParser
 import com.littlegreens.netty.client.listener.NettyClientListener
 import com.littlegreens.netty.client.status.ConnectState
 import com.tencent.liteav.login.model.ProfileManager
+import com.tencent.liteav.trtccalling.model.VoiceUtil
 import com.tencent.liteav.trtccalling.ui.videocall.TRTCVideoCallActivity
 import com.tencent.mmkv.MMKV
 import kotlinx.android.synthetic.main.activity_main.*
@@ -85,6 +86,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         val group_name = FenFenCommonUtil.face_group_name
         val CONTROL_RESULT_CODE = 300
 
+        /* 相机实例 */
+        var manager: CameraManager? = null
+
         //  相机
         val REQUEST_CODE_CAMERA = 500
 
@@ -106,8 +110,6 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     /**SDK实例*/
     var mFacePassHandler: FacePassHandler? = null
 
-    /* 相机实例 */
-    private var manager: CameraManager? = null
 
     /* 相机是否使用前置摄像头 */
     private var cameraFacingFront = true
@@ -249,7 +251,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     LogUtils.iTag("ProfileManager", "通话登录成功")
                     runOnUiThread {
                         if ("qingzheng" === AndroidDeviceSDK.deviceType) {
-                            video_call_siv.visibility = View.GONE
+                            video_call_siv.visibility = View.INVISIBLE
                         } else {
                             video_call_siv.visibility = View.VISIBLE
 
@@ -261,7 +263,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 override fun onFailed(code: Int, msg: String?) {
                     LogUtils.iTag("ProfileManager", "${code}通话登录成功$msg")
                     runOnUiThread {
-                        video_call_siv.visibility = View.GONE
+                        video_call_siv.visibility = View.INVISIBLE
                     }
 
                 }
@@ -355,12 +357,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 }
             }
         }
+        face_register_siv.setOnClickListener {
+            val intent = Intent(this@MainActivity, FaceRegisterActivity::class.java)
+            startActivity(intent)
+        }
 
     }
 
     override fun onResume() {
         super.onResume()
-        manager?.open(windowManager, false, cameraWidth, cameraHeight)
+        if (!isPhoneLogin) {
+            manager!!.open(windowManager, false, cameraWidth, cameraHeight)
+        }
         canRecognize = true
         LogUtils.iTag(TAG, "回到首页，开启人脸识别")
     }
@@ -368,13 +376,16 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     override fun onPause() {
         super.onPause()
         LogUtils.iTag(TAG, "页面跳转，暂停人脸识别")
-        manager?.release()
+        manager!!.release()
         canRecognize = false
     }
+
+    var isPhoneLogin = false
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         canRecognize = true
+        isPhoneLogin = false
         when (requestCode) {
             CONTROL_RESULT_CODE -> {
 
@@ -393,13 +404,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     } else {
                         val TAG = "特征"
                         file = File(facePath)
-                        //  获取位图对象
                         var bitmap = BitmapFactory.decodeFile(file.toString())
+                        try {
+                            //  获取位图对象
 //                        resiget_face.setImageBitmap(bitmap)
-                        //  如果图片是颠倒的，则旋转过来
-                        if (bitmap.width > bitmap.height) {
-                            bitmap = adjustPhotoRotation(bitmap, 90)
+                            //  如果图片是颠倒的，则旋转过来
+                            if (bitmap.width > bitmap.height) {
+                                bitmap = adjustPhotoRotation(bitmap, 90)
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread { ToastUtils.showShort("图片格式不正确") }
                         }
+
 
                         try {
                             //  提取特征值
@@ -505,8 +521,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 }.start()
             }
             REQUEST_CODE_PHONE_LOGIN -> {
-                manager?.release()
-
+                isPhoneLogin = true
                 if (data != null) {
                     if (data.getBooleanExtra("isSuccess", false)) {
                         goControlActivity()
@@ -1592,7 +1607,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                                 LogUtils.e("更新地址:$data")
                                 EventBus.getDefault().post(data)
                             }
-                        } else if ( /*type.equals("addFaceImage")*/false) {  //  添加人脸，人脸在服务器注册
+                        } else if (type.equals("addFaceImage")) {  //  添加人脸，人脸在服务器注册
                             Log.i("addFaceImage", "进入添加人脸")
                             val addFaceImageJsonObject = JsonParser.parseString(data).asJsonObject
                             val userId = addFaceImageJsonObject["userId"].asInt
@@ -1651,6 +1666,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         if (!canRecognize) {
             return
         }
+
         if (binsWorkTimeBean == null) {
             var map: MutableMap<String, String> = mutableMapOf(
                 "device_id" to deviceCode.toString()
@@ -1686,14 +1702,18 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 )
                 intent.putExtra("userId", "" + DustbinBrainApp.userId)
                 intent.putExtra("faceImage", faceImagePath)
+                manager?.release()
                 startActivityForResult(intent, 300)
             } else {
                 //  showToast("验证成功，但非投放时间", Toast.LENGTH_SHORT, false, null);
-                Toast.makeText(this@MainActivity, "非投放时间", Toast.LENGTH_LONG).show()
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "非投放时间", Toast.LENGTH_LONG).show()
+                    VoiceUtil.getInstance().openAssetMusics(this@MainActivity, "no_work_time.aac")
+                }
                 //  非投放时间
-                VoiceUtil.getInstance().openAssetMusics(this@MainActivity, "no_work_time.aac")
             }
         }
+
     }
 
     /**

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical"
+    >
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/y105"
+        android:text="人脸注册"
+        android:gravity="center"
+        android:textSize="@dimen/sp_25"
+        android:textColor="@color/black"
+        />
+    <ImageView
+        android:id="@+id/qr_login_regist"
+        android:layout_width="@dimen/y360"
+        android:layout_height="@dimen/y360"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/y43"
+        android:src="@mipmap/qr_login_regist" />
+    <TextView
+        android:layout_marginTop="@dimen/y50"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/y105"
+        android:text="打开微信扫一扫，扫码注册人脸"
+        android:gravity="center"
+        android:textSize="@dimen/sp_16"
+        android:textColor="@color/black"
+        />
+
+    <com.google.android.material.button.MaterialButton
+
+        android:id="@+id/back_btn"
+        android:layout_width="@dimen/x160"
+        android:layout_height="@dimen/x160"
+        android:gravity="center"
+        android:text="返回"
+        android:layout_gravity="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/sp_30"
+        app:cornerRadius="@dimen/x160"
+        android:onClick="bindCommit"
+        app:backgroundTint="@color/ffst_btn"
+        />
+
+</LinearLayout>

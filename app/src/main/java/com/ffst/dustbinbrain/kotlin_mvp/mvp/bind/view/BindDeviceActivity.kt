@@ -55,6 +55,7 @@ class BindDeviceActivity : BaseActivity() {
                     val listBeans: List<GetDustbinConfig.DataBean.ListBean> =
                         getDustbinConfig.data!!.list!!
                     mmkv?.encode(MMKVCommon.IM_USERID, getDustbinConfig.data!!.id)
+                    mmkv?.encode(MMKVCommon.DEVICE_NAME, getDustbinConfig.data!!.device_name)
                     for (listBean in listBeans) {
 
                         //  垃圾箱id   服务器分配

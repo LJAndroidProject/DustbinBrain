@@ -136,7 +136,7 @@ class AndroidDeviceSDK {
 
                 context.sendBroadcast(intent)
             }else{
-                ZtlManager.GetInstance().setSchedulePowerOn(6, 30, true);
+                ZtlManager.GetInstance().setSchedulePowerOn(17, 59, false);
             }
         }
 
@@ -150,7 +150,7 @@ class AndroidDeviceSDK {
             if("qingzheng" === deviceType){
 
             }else{
-                ZtlManager.GetInstance().setSchedulePowerOff(21, 30, false);
+                ZtlManager.GetInstance().setSchedulePowerOff(17, 58, false);
             }
         }
 
@@ -161,7 +161,6 @@ class AndroidDeviceSDK {
 
             }else{
                 ZtlManager.GetInstance().installAppAndStartUp(filePath, pkgName);
-
             }
         }
 

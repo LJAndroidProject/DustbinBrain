@@ -390,7 +390,7 @@ public class NetWorkUtil {
         dustbinStateUploadBean.setTimestamp(String.valueOf(nowTime));
         dustbinStateUploadBean.setApk_type(DustbinBrainApp.Companion.getApkType());
         dustbinStateUploadBean.setDevice_id(DustbinBrainApp.Companion.getDeviceId());
-        dustbinStateUploadBean.setVersion_code(versionCode);
+        dustbinStateUploadBean.setVersion_code(versionCode+"");
 
         RequestBody body = FormBody.create(MediaType.parse("application/json"), new Gson().toJson(dustbinStateUploadBean));
 

@@ -24,13 +24,16 @@ import com.ffst.dustbinbrain.kotlin_mvp.bean.DustBinRecordRequestParams
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinENUM
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinStateBean
 import com.ffst.dustbinbrain.kotlin_mvp.manager.SerialProManager
+import com.ffst.dustbinbrain.kotlin_mvp.mvp.main.camera.CameraManager
 import com.ffst.dustbinbrain.kotlin_mvp.utils.DataBaseUtil
 import com.ffst.dustbinbrain.kotlin_mvp.utils.DustbinUtil
-import com.ffst.dustbinbrain.kotlin_mvp.utils.VoiceUtil
+import com.tencent.liteav.trtccalling.model.VoiceUtil
 import com.ffst.mvp.base.activity.BaseActivity
 import kotlinx.android.synthetic.main.activity_control.*
 import org.greenrobot.eventbus.EventBus
 import java.io.File
+import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -123,11 +126,14 @@ class ControlActivity : BaseActivity() {
             userId = DustbinBrainApp.userId.toString()
         }
         control_welcome_textView.text = "欢迎用户 $userId 进入操作界面"
-        resgit_face_btn.background.alpha = 180
+        resgit_face_btn.background.alpha = 150
         resgit_face_btn.isEnabled = false
         resgit_face_btn.postDelayed({
             resgit_face_btn.isEnabled = true
             resgit_face_btn.background.alpha = 255
+            if(MainActivity.manager?.state == CameraManager.CameraState.OPENING){
+                MainActivity.manager?.release()
+            }
         }, 1000 * 5)
     }
 
@@ -213,6 +219,9 @@ class ControlActivity : BaseActivity() {
         when (viewId) {
             R.id.resgit_face_btn -> {
 
+                if(MainActivity.manager?.state == CameraManager.CameraState.OPENING){
+                    MainActivity.manager?.release()
+                }
                 AndroidDeviceSDK.unKeepActivity(this)
                 //人脸注册
                 //  步骤一：创建存储照片的文件
@@ -533,7 +542,7 @@ class ControlActivity : BaseActivity() {
     var hasManTask: TimerTask? = null
     var hasManTimer = Timer()
     private var hasManIsRun = true
-    private val AUTO_EXIT_TIME: Long = 30
+    private val AUTO_EXIT_TIME: Long = 60
 
     fun hasMan() {
         hasManTask = object : TimerTask() {
@@ -696,9 +705,9 @@ class ControlActivity : BaseActivity() {
         map.put("user_id", DustbinBrainApp.userId.toString())
         map.put("bin_id", dustbinStateBean.id.toString())
         map.put("bin_type", dustbinStateBean.dustbinBoxNumber)
-        map.put("post_weight", diff.toString())
-        map.put("former_weight", (dustbinStateBean.dustbinWeight - diff).toString())
-        map.put("now_weight", dustbinStateBean.dustbinWeight.toString())
+        map.put("post_weight", getMoneyByYuan(diff.toLong()))
+        map.put("former_weight", getMoneyByYuan((dustbinStateBean.dustbinWeight - diff).toLong()))
+        map.put("now_weight", getMoneyByYuan(dustbinStateBean.dustbinWeight.toLong()))
         map.put("doorNumber", dustbinStateBean.doorNumber.toString())
         map.put("plastic_bottle_num", "0")
         map["err_code"] =
@@ -715,4 +724,12 @@ class ControlActivity : BaseActivity() {
         recordRequestParams.setRequestMap(map)
         EventBus.getDefault().post(recordRequestParams)
     }
+    fun getMoneyByYuan(moneyByFen: Long) = getNoMoreThanTwoDigits(moneyByFen / 100.0)
+    fun getNoMoreThanTwoDigits(number: Double): String {
+        val format = DecimalFormat("0.##")
+        //未保留小数的舍弃规则，RoundingMode.FLOOR表示直接舍弃。
+        format.roundingMode = RoundingMode.FLOOR
+        return format.format(number)
+    }
+
 }

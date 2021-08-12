@@ -259,7 +259,7 @@ public class SerialPortService implements ISerialPortService {
             } else {
                 sendDataList.add(data);
             }
-            startSendQueue();
+//            startSendQueue();
             return null;
         }
     }

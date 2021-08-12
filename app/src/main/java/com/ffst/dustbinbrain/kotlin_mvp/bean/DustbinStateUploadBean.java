@@ -14,7 +14,7 @@ public class DustbinStateUploadBean {
     private String sign;
     private int apk_type;
     private String device_id;
-    private int version_code;
+    private String version_code;
     private List<ListBean> list;
 
     public int getApk_type() {
@@ -33,11 +33,11 @@ public class DustbinStateUploadBean {
         this.apk_type = apk_type;
     }
 
-    public int getVersion_code() {
+    public String getVersion_code() {
         return version_code;
     }
 
-    public void setVersion_code(int version_code) {
+    public void setVersion_code(String version_code) {
         this.version_code = version_code;
     }
 

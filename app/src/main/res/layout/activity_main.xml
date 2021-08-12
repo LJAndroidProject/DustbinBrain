@@ -61,19 +61,31 @@
         android:layout_width="@dimen/x123"
         android:layout_height="@dimen/x123"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@+id/video_call_siv"
         android:layout_marginEnd="@dimen/x15"
         android:layout_marginBottom="@dimen/y23"
         android:src="@mipmap/phone_btn" />
 
     <ImageView
-        android:visibility="gone"
+        android:visibility="invisible"
         android:id="@+id/video_call_siv"
+
+        android:layout_width="@dimen/x123"
+        android:layout_height="@dimen/x123"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="@dimen/x15"
+        android:layout_marginBottom="@dimen/y23"
+        android:src="@mipmap/video_call_btn" />
+
+    <ImageView
+        android:visibility="gone"
+        android:id="@+id/face_register_siv"
         android:layout_above="@+id/phone_login_siv"
         android:layout_width="@dimen/x123"
         android:layout_height="@dimen/x123"
         android:layout_alignParentEnd="true"
         android:layout_marginEnd="@dimen/x15"
         android:layout_marginBottom="@dimen/y23"
-        android:src="@mipmap/video_call_btn" />
+        android:src="@mipmap/face_register_btn"/>
 </RelativeLayout>

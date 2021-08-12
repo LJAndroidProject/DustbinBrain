@@ -12,6 +12,7 @@ import android.view.SurfaceView
 import androidx.core.content.FileProvider
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
+import com.ffst.dustbinbrain.kotlin_mvp.BuildConfig
 import com.ffst.dustbinbrain.kotlin_mvp.app.AndroidDeviceSDK
 import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.bean.*
@@ -122,7 +123,8 @@ class ResidentService : Service() {
                     dustbinStateUploadBean.timestamp = nowTime.toString()
                     dustbinStateUploadBean.apk_type = 1
                     dustbinStateUploadBean.device_id = deviceCode
-                    dustbinStateUploadBean.version_code = getAppVersionCode(this@ResidentService)
+//                    dustbinStateUploadBean.version_code = getAppVersionCode(this@ResidentService)
+                    dustbinStateUploadBean.version_code = BuildConfig.VERSION_NAME
 
                     NetApiManager.getInstance().postStatusUpload(
                         Gson().toJson(dustbinStateUploadBean),
@@ -147,7 +149,7 @@ class ResidentService : Service() {
                                         NetWorkUtil.getInstance().errorUpload(
                                             "上传状态时发现设备离线"
                                         )
-                                    }catch (e:NullPointerException){
+                                    }catch (e:java.lang.Exception){
                                         AndroidDeviceSDK.restartApp(this@ResidentService)
                                     }
                                 }
