@@ -10,6 +10,7 @@ import com.ffst.dustbinbrain.kotlin_mvp.app.DustbinBrainApp
 import com.ffst.dustbinbrain.kotlin_mvp.facepass.NetWorkUtil
 import com.ffst.dustbinbrain.kotlin_mvp.facepass.PhoneLoginBean
 import com.ffst.dustbinbrain.kotlin_mvp.facepass.ServerAddress
+import com.ffst.dustbinbrain.kotlin_mvp.utils.FenFenCommonUtil
 import com.ffst.mvp.base.activity.BaseActivity
 import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_bind_device.*
@@ -28,7 +29,6 @@ class PhoneLoginActivity : BaseActivity() {
     }
 
     override fun initViewData() {
-
     }
 
     fun bindCommit(v: View) {

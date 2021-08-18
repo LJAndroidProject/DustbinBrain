@@ -19,7 +19,7 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         versionCode 39
-        versionName "39.4"
+        versionName "39.5"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             //设置支持的SO库架构

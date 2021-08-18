@@ -44,6 +44,9 @@
         <activity android:name=".mvp.main.view.ControlActivity" android:theme="@style/MaterialComponentsNoActionBar"
             android:launchMode="singleInstance"
             />
+        <activity android:name=".mvp.main.view.NotWorkTimeActivity" android:theme="@style/MaterialComponentsNoActionBar"
+            android:launchMode="singleInstance"
+            />
         <activity android:name=".mvp.test.SerialProtTestActivity" android:theme="@style/MaterialComponentsNoActionBar"/>
         <activity android:name=".mvp.bind.view.DeviceMannageActivity"  android:theme="@style/MaterialComponentsNoActionBar">
             <intent-filter>

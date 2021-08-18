@@ -1,6 +1,9 @@
 package com.ffst.dustbinbrain.kotlin_mvp.utils
 
+import android.content.Context
 import android.text.TextUtils
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import com.ffst.dustbinbrain.kotlin_mvp.bean.DustbinENUM
 import okhttp3.internal.and
 import java.security.MessageDigest
@@ -62,5 +65,13 @@ class FenFenCommonUtil {
             }
             return ""
         }
+        fun HideKeyboard(v: View){
+            val imm = v.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            if (imm.isActive) {
+                imm.hideSoftInputFromWindow( v.applicationWindowToken, 0 );
+            }
+        }
+
+
     }
 }

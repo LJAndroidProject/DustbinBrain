@@ -125,7 +125,7 @@ class ControlActivity : BaseActivity() {
         if (TextUtils.isEmpty(userId)) {
             userId = DustbinBrainApp.userId.toString()
         }
-        control_welcome_textView.text = "欢迎用户 $userId 进入操作界面"
+        control_welcome_textView.text = "欢迎用户 $userId 进入投递界面"
         resgit_face_btn.background.alpha = 150
         resgit_face_btn.isEnabled = false
         resgit_face_btn.postDelayed({

@@ -367,7 +367,8 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
     override fun onResume() {
         super.onResume()
         if (!isPhoneLogin) {
-            manager!!.open(windowManager, false, cameraWidth, cameraHeight)
+            var isOpen =manager!!.open(windowManager, false, cameraWidth, cameraHeight)
+            LogUtils.dTag(TAG,"摄像头状态isOpen:$isOpen")
         }
         canRecognize = true
         LogUtils.iTag(TAG, "回到首页，开启人脸识别")
@@ -395,12 +396,12 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                     if (TextUtils.isEmpty(facePath)) {
                         DustbinBrainApp.userId = 0;
                         DustbinBrainApp.userType = 0;
-                        //  结算超时
-                        if (exitCode != 0) {
-                            if (exitCode == 1) {
-//                                closeAllDoor()
-                            }
-                        }
+//                        //  结算超时
+//                        if (exitCode != 0) {
+//                            if (exitCode == 1) {
+////                                closeAllDoor()
+//                            }
+//                        }
                     } else {
                         val TAG = "特征"
                         file = File(facePath)
@@ -511,7 +512,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 Thread {
                     for (dustbinStateBean in dustbinArrry) {
                         //  关补光灯
-                        SerialProManager.getInstance().closeLight(dustbinStateBean.doorNumber)
+                        if (dustbinStateBean.dustbinBoxNumber != "A") {
+                            SerialProManager.getInstance().closeLight(dustbinStateBean.doorNumber)
+                        }
                         try {
                             Thread.sleep(50)
                         } catch (e: java.lang.Exception) {
@@ -525,6 +528,9 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 if (data != null) {
                     if (data.getBooleanExtra("isSuccess", false)) {
                         goControlActivity()
+                    }else{
+                        var isOpen =manager?.open(windowManager, false, cameraWidth, cameraHeight)
+                        LogUtils.dTag(TAG,"摄像头状态isOpen:$isOpen")
                     }
                 }
             }
@@ -1528,6 +1534,13 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             DustbinBrainApp.userType = gQrReturnBean.info.user_type.toLong()
                             canRecognize = true
                             goControlActivity()
+                        } else if (type == "out_time") {//非投放时间
+                            val gQrReturnBean: GQrReturnBean =
+                                gson.fromJson(data, GQrReturnBean::class.java)
+                            DustbinBrainApp.userId = gQrReturnBean.info.user_id
+                            DustbinBrainApp.userType = gQrReturnBean.info.user_type.toLong()
+                            canRecognize = true
+                            goNotWorkTimeActivity()
                         } else if (type == "nfcActivity") {
                             val nfcActivityBean: NfcActivityBean =
                                 gson.fromJson(data, NfcActivityBean::class.java)
@@ -1587,6 +1600,7 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                             mFacePassHandler!!.clearAllGroupsAndFaces()
                             //  重启
 //                            AndroidDeviceSDK.reBoot(this@MainActivity)
+                            AndroidDeviceSDK.restartApp(this@MainActivity)
                         } else if (type == "updateAllUserType0") {
                             //  修改所有用户类型 为 0
                             val userMessageList: List<UserMessage> =
@@ -1686,7 +1700,6 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
         if (DustbinBrainApp.userType?.toInt() == 1) {
             //  跳转到垃圾箱控制台
             val intent = Intent(this@MainActivity, ControlActivity::class.java)
-//            val intent = Intent(this@MainActivity, SerialProtTestActivity::class.java)
             intent.putExtra("userId", "" + DustbinBrainApp.userId)
             intent.putExtra("faceImage", faceImagePath)
             startActivityForResult(intent, 300)
@@ -1698,22 +1711,54 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
                 val intent = Intent(
                     this@MainActivity,
                     ControlActivity::class.java
-//                    SerialProtTestActivity::class.java
                 )
                 intent.putExtra("userId", "" + DustbinBrainApp.userId)
                 intent.putExtra("faceImage", faceImagePath)
                 manager?.release()
                 startActivityForResult(intent, 300)
             } else {
-                //  showToast("验证成功，但非投放时间", Toast.LENGTH_SHORT, false, null);
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "非投放时间", Toast.LENGTH_LONG).show()
                     VoiceUtil.getInstance().openAssetMusics(this@MainActivity, "no_work_time.aac")
                 }
                 //  非投放时间
+                val intent = Intent(
+                    this@MainActivity,
+                    NotWorkTimeActivity::class.java
+                )
+                intent.putExtra("userId", "" + DustbinBrainApp.userId)
+                intent.putExtra("faceImage", faceImagePath)
+                manager?.release()
+                startActivityForResult(intent, 301)
             }
         }
 
+    }
+
+    fun goNotWorkTimeActivity() {
+        if (!canRecognize) {
+            return
+        }
+        if (binsWorkTimeBean == null) {
+            var map: MutableMap<String, String> = mutableMapOf(
+                "device_id" to deviceCode.toString()
+            )
+            viewModel?.getBinsWorkTime(map)
+        }
+        LogUtils.dTag(
+            "goControlActivity",
+            "binsWorkTime${binsWorkTimeBean?.getData()?.am_start_time}"
+        )
+        DustbinBrainApp.hasManTime = System.currentTimeMillis()
+        //  非投放时间
+        val intent = Intent(
+            this@MainActivity,
+            NotWorkTimeActivity::class.java
+        )
+        intent.putExtra("userId", "" + DustbinBrainApp.userId)
+        intent.putExtra("faceImage", faceImagePath)
+        manager?.release()
+        startActivityForResult(intent, 300)
     }
 
     /**
@@ -1727,40 +1772,6 @@ class MainActivity : BaseActivity(), CameraManager.CameraListener {
 
     //  图片文件
     private var file: File? = null
-    private fun showVerifyFail() {
-        val alertB = AlertDialog.Builder(this@MainActivity)
-        alertB.setCancelable(false)
-        alertB.setTitle("提示")
-        alertB.setMessage("需要进行人脸注册")
-        alertB.setPositiveButton(
-            "人脸注册"
-        ) { dialogInterface, i -> //  打开相机拍照
-            //  步骤一：创建存储照片的文件
-            val path = Environment.getExternalStorageDirectory().toString()
-            file = File(path, System.currentTimeMillis().toString() + ".jpg")
-            if (!file?.parentFile?.exists()!!) file?.parentFile?.mkdirs()
-            mUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                //  步骤二：Android 7.0及以上获取文件 Uri
-                FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file!!)
-            } else {
-                //  步骤三：获取文件Uri
-                Uri.fromFile(file)
-            }
-            //  步骤四：调取系统拍照
-            val intent = Intent("android.media.action.IMAGE_CAPTURE")
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, mUri)
-            startActivityForResult(intent, REQUEST_CODE_CAMERA)
-        }
-        alertB.setNegativeButton(
-            "取消"
-        ) { dialog, which ->
-            DustbinBrainApp.userId = 0
-            DustbinBrainApp.userType = 0
-            dialog.dismiss()
-        }
-        alertB.create()
-        alertDialog = alertB.show()
-    }
 
     private var nowFaceToken: String = ""
 

@@ -12,18 +12,19 @@
         android:layout_height="@dimen/y105"
         android:text="手机号登录"
         android:gravity="center"
-        android:textSize="@dimen/sp_25"
+        android:textSize="@dimen/sp_36"
         android:textColor="@color/black"
         />
+
     <TextView
-        android:layout_marginTop="@dimen/y100"
         android:layout_width="match_parent"
         android:layout_height="@dimen/y105"
-        android:text="输入注册的11位手机号登录"
+        android:layout_marginTop="@dimen/y100"
         android:gravity="center"
-        android:textSize="@dimen/sp_16"
+        android:text="输入注册的11位手机号登录"
         android:textColor="@color/black"
-        />
+        android:textSize="@dimen/sp_28" />
+
     <LinearLayout
         android:layout_marginTop="@dimen/y10"
         android:layout_gravity="center"
@@ -39,7 +40,7 @@
             android:layout_height="wrap_content">
                 <EditText
                     android:background="@drawable/shape_no_stroke"
-                    android:textSize="@dimen/sp_16"
+                    android:textSize="@dimen/sp_48"
                     android:maxLines="1"
                     android:inputType="phone|number"
                     android:layout_width="match_parent"
@@ -53,9 +54,6 @@
         android:id="@+id/phone_login_btn"
         android:layout_width="@dimen/x500"
         android:layout_height="@dimen/y100"
-        android:layout_marginBottom="@dimen/y100"
-        android:layout_above="@id/main_dev_debug"
-        android:layout_centerHorizontal="true"
         android:gravity="center"
         android:text="登录"
         android:layout_marginTop="@dimen/y100"
@@ -72,12 +70,8 @@
         android:id="@+id/phone_back_btn"
         android:layout_width="@dimen/x500"
         android:layout_height="@dimen/y100"
-        android:layout_marginBottom="@dimen/y100"
-        android:layout_above="@id/main_dev_debug"
-        android:layout_centerHorizontal="true"
-        android:gravity="center"
+        android:layout_marginTop="@dimen/x40"
         android:text="退出"
-        android:layout_marginTop="@dimen/y100"
         android:layout_gravity="center"
         android:textColor="@color/white"
         android:textSize="@dimen/sp_20"
